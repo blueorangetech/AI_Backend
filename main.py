@@ -1,38 +1,36 @@
-import pandas as pd
-from pandasai import SmartDataframe, PandasAI
-from pandasai.llm.openai import OpenAI
-from gpt_models.gpt_option import interim_report
-import os, openai
+from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from analyst import analyst
+import os, uuid, time
 
-from dotenv import load_dotenv
+app = FastAPI()
 
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-### Pandas AI###
+@app.post("/analysis")
+async def data_analysis(file: UploadFile):
+    repository = './file_repository'
+    os.makedirs(repository, exist_ok=True)
 
-llm = OpenAI(api_token = api_key)
+    file_name = f"{str(uuid.uuid4())}.xlsx"
+    file_path = os.path.join(repository, file_name)
 
-data = pd.read_excel("C:/Users/blueorange/Desktop/캐롯_리포트.xlsx")
+    with open(file_path, "wb") as f:
+        file_content = await file.read()
+        f.write(file_content)
 
-prompt = f"""
-        다음 데이터는 광고 성과 데이터다
-        일자 단위로 광고 매체 및 디바이스 별 성과를 알려줘
-        """
-smart_dataframe = SmartDataframe(data, config={'llm': llm})
-ai_result = smart_dataframe.chat(prompt)
-print(ai_result)
+    result = f"**PC**\n  - \ub178\ucd9c: +88,870 (\uc99d\uac00)\n  - \ud074\ub9ad: -5,336 (\uac10\uc18c)\n  - \ube44\uc6a9: +3,862,611 \uc6d0 (\uc99d\uac00)\n  - \uc804\ud658: -382 (\uac10\uc18c)\n  - CPC: +798.43 \uc6d0 (\uc99d\uac00)\n  - CTR: -0.222% (\uac10\uc18c)\n  - CVR: +0.029% (\uc99d\uac00)\n\n\uc774 \ubd84\uc11d \uacb0\uacfc\ub294 \uac01 \ub9e4\uccb4\uc640 \ub514\ubc14\uc774\uc2a4 \ubcc4\ub85c \uc131\uacfc\uc758 \ubcc0\ud654\ub97c \ubcf4\uc5ec\uc90d\ub2c8\ub2e4."
+    # result = analyst(file_path)
+    time.sleep(3)
 
-## CHAT GPT ###
-# print(data)
-openai.key = api_key
+    if os.path.exists(file_path):
+        os.remove(file_path)
 
-req = f'7/18 일 기준으로 광고 매체와 디바이스 별 성과를 요약하고 7/17일 대비 증감률을 알려줘 \n데이터: {ai_result}'
-message = [{"role": "user", "content": req}]
-response = interim_report(0, message, ai_result)
-
-# Extract the analysis from the response
-
-# Print the analysis
-print("분석 결과:")
-print(response)
+    return result

@@ -2,3 +2,8 @@
 cache
 exports
 .env
+pandasai.log
+gpt_models/__pycache__
+tools/__pycache__
+진행상황.xlsx
+메모.txt
