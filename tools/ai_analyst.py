@@ -15,14 +15,14 @@ def summary_data(arguments):
     llm = OpenAI(api_token = api_key)
     pandasai = SmartDataframe(data, config={'llm': llm, 'verbose': True})
 
-    ai_result = pandasai.chat(prompt)
-
-    # try:
-    #     result = pd.DataFrame(ai_result).to_string()
-    #     return json.dumps(result)
+    ai_result = pandasai.chat(f"{prompt}, return all columns and rows")
     
-    # except:
-    return json.dumps(str(ai_result))
+    try:
+        result = pd.DataFrame(ai_result).to_string()
+        return json.dumps(result)
+    
+    except:
+        return json.dumps(str(ai_result))
 
 
 def summary_data_description():
@@ -48,12 +48,8 @@ def summary_data_description():
 
 if __name__ == '__main__':
 
-    arguments = {"data_path": 'C:/Users/blueorange/Desktop/캐롯_리포트.xlsx',
-                 "prompt" : 
-                            """
-                            6월 대비 7월의 광고 성과를 파악한 후
-                            노출 증감에 가장 큰 영향을 미친 매체 및 디바이스와 수치를 알려줘
-                            """
+    arguments = {"data_path": 'C:/Users/blueorange/Desktop/캐롯_키워드리포트.xlsx',
+                 "prompt" : """6월 노출 수 합은?"""
                 }
     
     
