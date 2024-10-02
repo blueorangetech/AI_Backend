@@ -1,5 +1,6 @@
 from gpt_models.gpt_option import interim_report
-from gpt_models.trend_finder import makerter_description
+from gpt_models.keyword_analyst import makerter_description
+from gpt_models.general_analyst import general_analyst_description
 
 from tools.group_data import group_data
 from tools.keyword_similartiy import check_similarity
@@ -9,6 +10,8 @@ import os, openai, json, time
 
 ## CHAT GPT ###
 def analyst(file_path):
+	print("Processing Total Analyst")
+
 	data = pd.read_excel(file_path)
 	
 	fields = ["노출", "클릭", "광고비", "PA청약"] # 수정 - 하드코딩
@@ -18,19 +21,28 @@ def analyst(file_path):
 				"fields": [], "sum_fields" : fields, "limit": None}
 
 	total_data = group_data(arguments)
-	agent = makerter_description()
+	agent = general_analyst_description()
 
-	req = f"다음 데이터를 요약하시오\n{total_data}"
+	req = f"다음 데이터를 브리핑 하시오. 소수점은 2자리 까지만 표기한다.\n{total_data}"
 	msg = {"role": "user", "content": req}
 
-	response = interim_report(msg)
-	return response
+	response = interim_report(msg, agent)
+	result = response.replace("*", "")
+	return result
 
 def media_analyst(file_path):
+	print("Processing Media Analyst")
+
 	data = pd.read_excel(file_path)
 	
 	fields = ["노출", "클릭", "광고비", "PA청약"] # 수정 - 하드코딩
-	fields = ["노출", ["CTR", "클릭", "노출", 100]] # 수정 - 하드코딩
+	
+	fields = ["노출", "클릭", "광고비", "PA청약", 
+		   ["CTR", "클릭", "노출", 100],
+		   ["CPC", "광고비", "클릭", 1],
+		   ["CVR", "PA청약", "클릭", 100],
+		   ["CPA", "광고비", "PA청약", 1]] # 수정 - 하드코딩
+
 	data["기준"] = data["날짜"].dt.month # 수정 - 하드코딩
 	
 	total_data = []
@@ -41,15 +53,16 @@ def media_analyst(file_path):
 		
 		total_data.append(group_data(arguments))
 	
-	req = f"다음 데이터를 요약하시오\n{total_data}"
+	req = f"다음 데이터를 요약하시오.\n{total_data}"
 			
 	msg = {"role": "user", "content": req}
-	agent = makerter_description()
+	
 	response = interim_report(msg)
-
-	return response
+	result = response.replace("*", "")
+	return result
 
 def keyword_analyst(file_path):
+	print("Processing Keyword Analyst")
 
 	# 41 seconds
 	data = pd.read_excel(file_path)
@@ -64,31 +77,42 @@ def keyword_analyst(file_path):
 	fields = ["노출수", "클릭수", "총비용", "PA 청약"] # 수정 - 하드코딩
 	data["기준"] = data["기간"].dt.month # 수정 - 하드코딩
 	
-	arguments = {"data": data, "standard": ["기준"],
-			  "fields": ["키워드그룹"], "sum_fields" : "클릭수", "limit": 1}
-	
-	total_data = group_data(arguments)
-
-	group_info = [f"키워드 그룹 {i}: {groups[int(i)]}" for i in total_data["키워드그룹"]]
-
 	## 매체 분석
-	data_chunks = []
+	response = []
 
-	for keyword in total_data["키워드그룹"]:
-		keyword_data = data[data["키워드그룹"] == keyword]
-		arguments = {"data": keyword_data, "standard": ["기준"],
-			   "fields": ["매체구분", "키워드그룹"], "sum_fields" : "클릭수", "limit": 1}
+	for field in fields:
+		start = time.time()
+		# 데이터 1차 분석 - 등락 폭이 가장 심한 키워드 그룹
+
+		arguments = {"data": data, "standard": ["기준"],
+				"fields": ["키워드그룹"], "sum_fields" : field, "limit": 1}
 		
-		data_chunks.append(group_data(arguments))
+		total_data = group_data(arguments)
 
-	media_data = pd.concat(data_chunks)
-	req = f"다음 데이터를 분석하시오\n{total_data}\n{media_data}\{group_info}"
+		group_info = [f"키워드 그룹 {i}: {groups[int(i)]}" for i in total_data["키워드그룹"]]
+
+		data_chunks = []
+
+		# 데이터 2차 분석 - 키워드 그룹 기준, 
+		for keyword in total_data["키워드그룹"]:
+			keyword_data = data[data["키워드그룹"] == keyword]
+			arguments = {"data": keyword_data, "standard": ["기준"],
+				"fields": ["매체구분", "키워드그룹"], "sum_fields" : field, "limit": 1}
 			
-	msg = {"role": "user", "content": req}
-	agent = makerter_description()
-	response = interim_report(msg, agent)
+			data_chunks.append(group_data(arguments))
 
-	return response
+		media_data = pd.concat(data_chunks)
+
+		req = f"""다음 데이터를 분석하시오 키워드 그룹은 번호 대신 예시 키워드를 사용한다.\n{total_data}\n{media_data}\{group_info}"""
+				
+		msg = {"role": "user", "content": req}
+		agent = makerter_description()
+		response.append(interim_report(msg, agent).replace("*", ""))
+
+		end = time.time()
+		print(f'Processing time: {end - start}')
+
+	return "\n".join(response)
 
 if __name__ == "__main__":
 	file_path = "C:/Users/blueorange/Desktop/캐롯_리포트.xlsx"
