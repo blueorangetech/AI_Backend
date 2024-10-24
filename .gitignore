@@ -6,3 +6,4 @@ pandasai.log
 __pycache__/
 진행상황.xlsx
 메모.txt
+file_repository/*

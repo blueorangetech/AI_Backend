@@ -27,15 +27,14 @@ async def data_analysis(file: UploadFile = File(...)):
         file_content = await file.read()
         f.write(file_content)
 
-    results = []
-    results.append(analyst(file_path))
-    results.append(media_analyst(file_path))
+    results = {}
+    results["통합 리포트"] = analyst(file_path)
+    results["매체별 리포트"] = media_analyst(file_path)
     
     if os.path.exists(file_path):
         os.remove(file_path)
 
-    result = "\n".join(results)
-    return result
+    return results
 
 @app.post("/analysis/keyword")
 async def keyword_analysis(file: UploadFile = File(...)):

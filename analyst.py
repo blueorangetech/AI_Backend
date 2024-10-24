@@ -6,7 +6,7 @@ from tools.group_data import group_data
 from tools.keyword_similartiy import check_similarity
 
 import pandas as pd
-import os, openai, json, time
+import time
 
 ## CHAT GPT ###
 def analyst(file_path):
@@ -37,11 +37,15 @@ def media_analyst(file_path):
 	
 	fields = ["노출", "클릭", "광고비", "PA청약"] # 수정 - 하드코딩
 	
-	fields = ["노출", "클릭", "광고비", "PA청약", 
-		   ["CTR", "클릭", "노출", 100],
+	fields = ["PA청약", 
+		   ["CPA", "광고비", "PA청약", 1],
+		   "광고비",
 		   ["CPC", "광고비", "클릭", 1],
+		   ["CTR", "클릭", "노출", 100], 
+		   "노출", 
+		   "클릭", 
 		   ["CVR", "PA청약", "클릭", 100],
-		   ["CPA", "광고비", "PA청약", 1]] # 수정 - 하드코딩
+		   ] # 수정 - 하드코딩
 
 	data["기준"] = data["날짜"].dt.month # 수정 - 하드코딩
 	
@@ -74,11 +78,18 @@ def keyword_analyst(file_path):
 	groups, groups_map = check_similarity(unique_keywords) # 90 seconds
 	data["키워드그룹"] = data["키워드"].map(groups_map)
 
-	fields = ["노출수", "클릭수", "총비용", "PA 청약"] # 수정 - 하드코딩
+	fields = ["청약", 
+		   ["CPA", "광고비", "청약", 1],
+		   "광고비",
+		   ["CPC", "광고비", "클릭", 1],
+		   "노출", 
+		   "클릭",
+		   ] # 수정 - 하드코딩
+	
 	data["기준"] = data["기간"].dt.month # 수정 - 하드코딩
 	
 	## 매체 분석
-	response = []
+	response = {}
 
 	for field in fields:
 		start = time.time()
@@ -107,12 +118,19 @@ def keyword_analyst(file_path):
 				
 		msg = {"role": "user", "content": req}
 		agent = makerter_description()
-		response.append(interim_report(msg, agent).replace("*", ""))
+
+		result = interim_report(msg, agent)
+		
+		if isinstance(field, str):
+			response[field] = result.replace("*", "")
+		
+		else:
+			response[field[0]] = result.replace("*", "")
 
 		end = time.time()
 		print(f'Processing time: {end - start}')
 
-	return "\n".join(response)
+	return response
 
 if __name__ == "__main__":
 	file_path = "C:/Users/blueorange/Desktop/캐롯_리포트.xlsx"
