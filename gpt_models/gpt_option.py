@@ -5,7 +5,7 @@ from tools.group_data import group_data
 
 def interim_report(msg, agent=None):
     funtcions = [
-        mathematics_description(),
+        # mathematics_description(),
         # summary_data_description()
     ]
 
@@ -13,18 +13,18 @@ def interim_report(msg, agent=None):
 
     while True:
         response = openai.ChatCompletion.create(
-            model='gpt-4-turbo',
+            model='gpt-4o',
             messages = message,
             temperature = 0.7,
-            functions = funtcions,
-            function_call="auto"
+            # functions = funtcions,
+            # function_call="auto"
             )
         
         response_message = response['choices'][0]['message']
         
         if response_message.get('function_call'):
             available_function = {
-                "mathematics" : mathematics,
+                # "mathematics" : mathematics,
                 # "summary_data": summary_data,
             }
 

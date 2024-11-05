@@ -12,10 +12,10 @@ def date_group(file, standard, compare):
 
     def classify(date):
         if st_start <= date <= st_end:
-            return f"{st_start.date()} ~ {st_end.date()}"
+            return f"분석 기간: {st_start.date()} ~ {st_end.date()}"
         
         elif com_start <= date <= com_end:
-            return f"{com_start.date()} ~ {com_end.date()}"
+            return f"비교 기간 : {com_start.date()} ~ {com_end.date()}"
         
         else:
             return None

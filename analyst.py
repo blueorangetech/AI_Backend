@@ -18,12 +18,13 @@ def analyst(pre_result):
 
 	total_data = group_data(arguments)
 	agent = general_analyst_description()
-
-	req = f"다음 데이터를 브리핑 하시오. 소수점은 2자리 까지만 표기한다.\n{total_data}"
+	
+	req = f"다음 데이터를 분석 한 후 요약하라.\n{total_data}"
 	msg = {"role": "user", "content": req}
 
 	response = interim_report(msg, agent)
-	result = response.replace("*", "")
+	result = response.replace("```html", "").replace("```", "")	
+	
 	return result
 
 def media_analyst(pre_result):
@@ -48,13 +49,14 @@ def media_analyst(pre_result):
 				"fields": ["상품구분(매체)", "디바이스"], "sum_fields" : field, "limit": 1}
 		
 		total_data.append(group_data(arguments))
-	
-	req = f"다음 데이터를 요약하시오.\n{total_data}"
+
+	agent = general_analyst_description()
+	req = f"다음 데이터를 지표 별로 테이블을 분리하여 요약하시오. \n{total_data}"
 			
 	msg = {"role": "user", "content": req}
 	
-	response = interim_report(msg)
-	result = response.replace("*", "")
+	response = interim_report(msg, agent)
+	result = response.replace("```html", "").replace("```", "")
 	return result
 
 def keyword_analyst(pre_result):
@@ -77,6 +79,7 @@ def keyword_analyst(pre_result):
 	
 	## 매체 분석
 	response = {}
+	agent = general_analyst_description()
 
 	for field in fields:
 		start = time.time()
@@ -104,15 +107,14 @@ def keyword_analyst(pre_result):
 		req = f"""다음 데이터를 분석하시오 키워드 그룹은 번호 대신 예시 키워드를 사용한다.\n{total_data}\n{media_data}\{group_info}"""
 				
 		msg = {"role": "user", "content": req}
-		agent = makerter_description()
 
 		result = interim_report(msg, agent)
 		
 		if isinstance(field, str):
-			response[field] = result.replace("*", "")
+			response[field] = result.replace("```html", "").replace("```", "")	
 		
 		else:
-			response[field[0]] = result.replace("*", "")
+			response[field[0]] = result.replace("```html", "").replace("```", "")	
 
 		end = time.time()
 		print(f'Processing time: {end - start}')
