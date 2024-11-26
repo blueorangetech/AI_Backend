@@ -18,6 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def hello():
+    return "Welcome to BlueOrange Service !"
+
 @app.post("/analysis/report")
 async def data_analysis(file: UploadFile = File(...), standard: str = Form(), compare: str = Form()):
 
