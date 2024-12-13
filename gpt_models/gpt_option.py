@@ -1,4 +1,4 @@
-import openai, json
+import openai, json, aiohttp, asyncio
 from tools.math_tool import mathematics, mathematics_description
 from tools.ai_analyst import summary_data, summary_data_description
 from tools.group_data import group_data
@@ -13,7 +13,7 @@ def interim_report(msg, agent=None):
 
     while True:
         response = openai.ChatCompletion.create(
-            model='gpt-4o',
+            model='gpt-4o-mini',
             messages = message,
             temperature = 0.7,
             # functions = funtcions,
