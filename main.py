@@ -43,7 +43,7 @@ async def data_analysis(file: UploadFile = File(...), standard: str = Form(),
         pre_result, kst_standard, kst_compare = date_group(file_path, standard, compare)
         
         results = {}
-        # results["통합 리포트"] = analyst(pre_result, kst_standard, kst_compare, fields)
+        results["통합 리포트"] = analyst(pre_result, kst_standard, kst_compare, fields)
         results["매체별 리포트"] = media_analyst(pre_result, kst_standard, kst_compare, fields, depth)
         
         return results
