@@ -6,7 +6,7 @@ from analyst import analyst, media_analyst, keyword_analyst
 from tools.pre_processing import date_group
 from models.customer_auth_check import Login_Info
 
-import os, uuid, json, jwt
+import os, uuid, json, jwt, time
 
 app = FastAPI()
 

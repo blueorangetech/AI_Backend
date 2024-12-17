@@ -21,8 +21,8 @@ def group_data(arguments):
             data_sorted = filterd.sort_values(by="기준", key=lambda x: x.str.contains("분석 기간"), ascending=True).reset_index(drop=True)
 
             for field in carculate_fields:
-                data_sorted[f"{field}증감"] = data_sorted[field].diff()
-                data_sorted[f"{field}증감%"] = data_sorted[field].pct_change() * 100
+                data_sorted[f"{field} - 증감"] = data_sorted[field].diff()
+                data_sorted[f"{field} - 증감%"] = data_sorted[field].pct_change() * 100
 
             return data_sorted
         
@@ -45,7 +45,7 @@ def group_data(arguments):
     filterd["증감 수치"] = filterd.groupby(fields)[col_name].diff()
     filterd["증감률"] = filterd.groupby(fields)[col_name].pct_change() * 100
     
-    filterd["증감 수치"], filterd["증감률"] = filterd["증감 수치"].round(2), filterd["증감률"].round(2)
+    filterd["증감 수치"], filterd["증감률"] = filterd["증감 수치"].round(0), filterd["증감률"].round(2)
 
     # 기준 필드 날리고, inf, NaN, -100 삭제하기
     filterd = filterd[(filterd["증감률"].notna()) & (filterd["증감률"] > -100) & (~filterd["증감률"].isin([np.inf, -np.inf]) )]
