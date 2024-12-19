@@ -5,8 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from analyst import analyst, media_analyst, keyword_analyst
 from tools.pre_processing import date_group
 from models.customer_auth_check import Login_Info
+from auth.auth_customer import authenticate
+from tools.mongodb import MongoDB
 
-import os, uuid, json, jwt, time
+import os, uuid, json, jwt, traceback
 
 app = FastAPI()
 
@@ -20,15 +22,37 @@ app.add_middleware(
 )
 
 jwt_token = os.environ["jwt_token_key"]
+mongodb = MongoDB.get_instance()
+db = mongodb["Customers"]
 
 @app.get("/")
 async def hello():
     return "Welcome to BlueOrange Service !"
 
+@app.get("/analysis/cached")
+async def get_cached_data(Authorization: Annotated[Union[str, None], Header()] = None):
+    payload = jwt.decode(Authorization, jwt_token, algorithms="HS256")
+    customer_name = payload["access"]
+
+    collection = db["cache"]
+    cahced_data = collection.find_one({"name": customer_name})
+    
+    del cahced_data["name"]
+    del cahced_data["_id"]
+
+    return cahced_data
+
+
 @app.post("/analysis/report")
 async def data_analysis(file: UploadFile = File(...), standard: str = Form(), 
-                        compare: str = Form(), formula: str = Form(), depth: str = Form(),):
+                        compare: str = Form(), formula: str = Form(), depth: str = Form(),
+                        Authorization: Annotated[Union[str, None], Header()] = None):
     try:
+        payload = jwt.decode(Authorization, jwt_token, algorithms="HS256")
+        customer_name = payload["access"]
+
+        print(f"{customer_name} Request analysis")
+
         repository = './file_repository'
         os.makedirs(repository, exist_ok=True)
 
@@ -43,9 +67,27 @@ async def data_analysis(file: UploadFile = File(...), standard: str = Form(),
         pre_result, kst_standard, kst_compare = date_group(file_path, standard, compare)
         
         results = {}
-        results["통합 리포트"] = analyst(pre_result, kst_standard, kst_compare, fields)
-        results["매체별 리포트"] = media_analyst(pre_result, kst_standard, kst_compare, fields, depth)
+
+        total_report = analyst(pre_result, kst_standard, kst_compare, fields)
+        media_report = media_analyst(pre_result, kst_standard, kst_compare, fields, depth)
         
+        results["통합 리포트"], results["매체별 리포트"] = total_report, media_report
+        collection = db["cache"]
+
+        stored_data = collection.find_one({"name": customer_name})
+
+        if stored_data is None:
+            data = {"name": customer_name, 
+                    "통합 리포트": total_report, "매체별 리포트" : media_report}
+            
+            collection.insert_one(data)
+
+        else:
+            collection.update_one({"name": customer_name}, 
+                                  {"$set": {"통합 리포트": total_report,
+                                            "매체별 리포트" : media_report}
+                                            })
+
         return results
     
     except ValueError as e:
@@ -57,8 +99,15 @@ async def data_analysis(file: UploadFile = File(...), standard: str = Form(),
 
 @app.post("/analysis/keyword")
 async def keyword_analysis(file: UploadFile = File(...), standard: str = Form(), 
-                           compare: str = Form(), keyword_formula: str = Form(), depth: str = Form(),):
+                           compare: str = Form(), keyword_formula: str = Form(), 
+                           depth: str = Form(),
+                           Authorization: Annotated[Union[str, None], Header()] = None):
     try:
+        payload = jwt.decode(Authorization, jwt_token, algorithms="HS256")
+        customer_name = payload["access"]
+
+        print(f"{customer_name} Request Keyword analysis")
+
         repository = './file_repository'
         os.makedirs(repository, exist_ok=True)
 
@@ -73,6 +122,19 @@ async def keyword_analysis(file: UploadFile = File(...), standard: str = Form(),
         
         fields, depth = json.loads(keyword_formula), json.loads(depth)
         result = keyword_analyst(pre_result, kst_standard, kst_compare, fields, depth)
+
+        collection = db["cache"]
+        stored_data = collection.find_one({"name": customer_name})
+
+        if stored_data is None:
+            data = {"name": customer_name}
+            for key in result:
+                data[key] = result[key]
+            
+            collection.insert_one(data)
+
+        else:
+            collection.update_one({"name": customer_name}, {"$set": result})
 
         return result
     
@@ -92,8 +154,9 @@ async def keyword_analysis(file: UploadFile = File(...), standard: str = Form(),
 @app.post("/auth/{customer_url}")
 async def login(login_info : Login_Info):
     try:
-        if login_info.password == "1111":
-            payload = {"access": login_info.name}
+        name, password = login_info.name, login_info.password
+        if authenticate(name, password):
+            payload = {"access": name}
             token = jwt.encode(payload, jwt_token, algorithm="HS256")
             return  {"status": True, "token": token}
 
@@ -104,6 +167,7 @@ async def login(login_info : Login_Info):
         raise http_exc
 
     except Exception:
+        traceback.print_exc()
         raise HTTPException(status_code=404, detail="시스템 에러 발생")
 
 @app.get("/auth/{customer_url}")

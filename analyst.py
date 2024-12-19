@@ -8,6 +8,7 @@ from tools.keyword_similartiy import check_similarity
 import pandas as pd
 import time, traceback
 
+
 ## CHAT GPT ###
 def analyst(pre_result, standard, compare, fields):
 	try:
