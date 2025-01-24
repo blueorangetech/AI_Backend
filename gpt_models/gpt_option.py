@@ -21,7 +21,11 @@ def interim_report(msg, agent=None):
             )
         
         response_message = response['choices'][0]['message']
-        
+
+        print(f"prompt tokens: {response['usage']['prompt_tokens']}")
+        print(f"completion tokens: {response['usage']['completion_tokens']}")
+        print(f"total tokens: {response['usage']['total_tokens']}")
+
         if response_message.get('function_call'):
             available_function = {
                 # "mathematics" : mathematics,

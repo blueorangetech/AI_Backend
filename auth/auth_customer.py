@@ -1,4 +1,4 @@
-from tools.mongodb import MongoDB
+from database.mongodb import MongoDB
 import bcrypt
 
 mongodb = MongoDB.get_instance()

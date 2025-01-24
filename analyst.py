@@ -20,10 +20,10 @@ def analyst(pre_result, standard, compare, fields):
 					"fields": [], "sum_fields" : fields, "limit": None}
 
 		total_data = group_data(arguments)
-
+		
 		agent = general_analyst_description()
 		
-		req = f"""제공되는 모든 데이터를 분석 한 후 요약하라.
+		req = f"""제공되는 모든 데이터를 분석 한 후 보고서를 작성하라.
 				데이터는 생략할 수 없다.
 				수 표기 시 회계처리를 해줘
 				분석 기간 : {standard}
@@ -40,28 +40,61 @@ def analyst(pre_result, standard, compare, fields):
 	except:
 		raise ValueError('데이터 처리 중 문제가 발생했습니다.')
 
-def media_analyst(pre_result, standard, compare, fields, depth):
+def media_analyst(pre_result, standard, compare, fields, depth, product):
 	try:
 		print(f"Processing Media Analyst")
 		print(f"Standard: {[dt.strftime('%Y-%m-%d %Z') for dt in standard]}")
 		print(f"Compare: {[dt.strftime('%Y-%m-%d %Z') for dt in compare]}")
 		
-		total_data = []
-
-		for field in fields:
-			arguments = {"data": pre_result, "standard": ["기준"],
-					"fields": depth, "sum_fields" : field, "limit": 1}
-			
-			total_data.append(group_data(arguments))
-
 		agent = general_analyst_description()
-		req = f"""다음 데이터를 지표 별로 테이블을 분리하여 요약하시오.
+		
+		total_data = []
+		if len(product): # 상품이 여러 개 존재하는 광고주
+			product_list = pre_result[product[0]].unique()
+
+			for pl in product_list:
+				pre_result_part = pre_result.loc[pre_result[product[0]] == pl]
+				product_result = []
+
+				for field in fields:
+					arguments = {"data": pre_result_part, "standard": ["기준"],
+							"fields": depth, "sum_fields" : field, "limit": 1}
+					
+					part_data = group_data(arguments)
+
+					# 빈 데이터는 요청에 추가하지 않음
+					if len(part_data["data"]): 
+						part_result = {"product": pl, "part_data": part_data}
+						product_result.append(part_result)
+				
+				req = f"""다음 데이터를 상품과 지표 별로 
+				테이블을 분리하여 보고서를 작성하라.
+				수 표기 시 회계처리를 해줘
+				분석 기간 : {standard}
+				비교 기간 : {compare}
+				{product_result}"""
+
+				msg = {"role": "user", "content": req}
+
+				product_response = interim_report(msg, agent)
+				total_data.append(product_response.replace("```html", "").replace("```", ""))
+			
+			return "\n".join(total_data)
+		
+		else:
+			for field in fields:
+				arguments = {"data": pre_result, "standard": ["기준"],
+						"fields": depth, "sum_fields" : field, "limit": 1}
+				
+				total_data.append(group_data(arguments))
+				
+		msg = {"role": "user", "content": req}
+		req = f"""다음 데이터를 상품과 지표 별로 
+				테이블을 분리하여 보고서를 작성하라.
 				수 표기 시 회계처리를 해줘
 				분석 기간 : {standard}
 				비교 기간 : {compare}
 				{total_data}"""
-				
-		msg = {"role": "user", "content": req}
 		
 		print("Wait for GPT response...")
 		response = interim_report(msg, agent)
@@ -70,6 +103,7 @@ def media_analyst(pre_result, standard, compare, fields, depth):
 		return result
 	
 	except:
+		traceback.print_exc()
 		raise ValueError('데이터 처리 중 문제가 발생했습니다.')
 
 def keyword_analyst(pre_result, standard, compare, fields, depth):
