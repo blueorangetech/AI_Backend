@@ -19,6 +19,9 @@ os.makedirs(repository, exist_ok=True)
 
 @router.get("/cached")
 async def get_cached_data(Authorization: Annotated[Union[str, None], Header()] = None):
+    if Authorization is None:
+        raise HTTPException(status_code=401, detail="Authorization 헤더가 필요합니다")
+    
     try:
         payload = jwt.decode(Authorization, jwt_token, algorithms="HS256")
         customer_name = payload["access"]
@@ -43,6 +46,12 @@ async def data_analysis(file: UploadFile = File(...), standard: str = Form(),
                         compare: str = Form(), formula: str = Form(), 
                         depth: str = Form(), product: str = Form(),
                         Authorization: Annotated[Union[str, None], Header()] = None):
+    
+    file_path = None
+
+    if Authorization is None:
+        raise HTTPException(status_code=401, detail="Authorization 헤더가 필요합니다")
+    
     try:
         payload = jwt.decode(Authorization, jwt_token, algorithms="HS256")
         customer_name = payload["access"]
@@ -89,7 +98,7 @@ async def data_analysis(file: UploadFile = File(...), standard: str = Form(),
         raise HTTPException(status_code=404, detail=str(e))
     
     finally:
-        if os.path.exists(file_path):
+        if file_path and os.path.exists(file_path):
             os.remove(file_path)
 
 @router.post("/keyword")
@@ -97,6 +106,12 @@ async def keyword_analysis(file: UploadFile = File(...), standard: str = Form(),
                            compare: str = Form(), keyword_formula: str = Form(), 
                            depth: str = Form(),
                            Authorization: Annotated[Union[str, None], Header()] = None):
+    
+    file_path = None
+
+    if Authorization is None:
+        raise HTTPException(status_code=401, detail="Authorization 헤더가 필요합니다")
+    
     try:
         payload = jwt.decode(Authorization, jwt_token, algorithms="HS256")
         customer_name = payload["access"]
@@ -141,6 +156,6 @@ async def keyword_analysis(file: UploadFile = File(...), standard: str = Form(),
         raise HTTPException(status_code=404, detail=str(exc))
     
     finally:
-        if os.path.exists(file_path):
+        if file_path and os.path.exists(file_path):
             os.remove(file_path)
 

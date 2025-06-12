@@ -12,6 +12,10 @@ jwt_token = os.environ["jwt_token_key"]
 @router.get("/{customer_url}")
 async def check_header(customer_url: str, 
                        Authorization: Annotated[Union[str, None], Header()] = None):
+    
+    if Authorization is None:
+        raise HTTPException(status_code=401, detail="Authorization 헤더가 필요합니다")
+    
     try:
         payload = jwt.decode(Authorization, jwt_token, algorithms="HS256")
         if customer_url != payload["access"]:
