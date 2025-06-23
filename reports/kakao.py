@@ -2,7 +2,7 @@ import requests, json, os
 import pandas as pd
 # from database.mongodb import MongoClient
 
-# "https://kauth.kakao.com/oauth/authorize?client_id=0b8dfdd0c7e9b669e1b6a6edd9705c92&redirect_uri=http://blorange.net/blormanage/api_restapi_kakao.php&response_type=code"
+# "https://kauth.kakao.com/oauth/authorize?client_id=0b8dfdd0c7e9b669e1b6a6edd9705c92&redirect_uri=http://blorange.net/lib/api_restapi_kakao.php&response_type=code"
 
 def generate_token(code, client_id, redirect_uri):
     url = "https://kauth.kakao.com/oauth/token"
@@ -16,7 +16,7 @@ def generate_token(code, client_id, redirect_uri):
 
     response = requests.post(url, data=data)
     tokens = response.json()
-
+    print(tokens)
     if "access_token" in tokens:
         with open("kakao_token.json", "w") as fp:
             json.dump(tokens, fp)
@@ -145,7 +145,7 @@ def get_reports(token, account_id, campaign_id, start, end):
         return table_data
 
 if __name__ == "__main__":
-    print()
+    generate_token("HtXmantwBMZ8aYe_Z9ZkOXg0yd0BK9X2Vp_lTt5NrfFVwtrdwZsNyQAAAAQKFxItAAABl3unLCH_A_o_BVb6-Q", "0b8dfdd0c7e9b669e1b6a6edd9705c92", "http://blorange.net/lib/api_restapi_kakao.php" )
     # 광고주 선택 단계 스킵 - 데모 버전
     # campaigns = get_campagins(token, "627936")
     # print(campaigns)

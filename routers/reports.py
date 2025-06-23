@@ -1,17 +1,21 @@
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, status, Query
+from fastapi.responses import JSONResponse
 from database.mongodb import MongoDB
 from reports import kakao
 from services.naver_service import NaverReportService
+from services.kakao_service import KakaoReportService
+from auth.kakao_token_manager import KakaoTokenManager
 from dependency import get_naver_client
 from models.naver_request_models import NaverRequsetModel
+from models.kakao_request_models import KakakoRequestModel
 import pandas as pd
-import time, json, os
+import time, json, os, jwt, requests
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 mongodb = MongoDB.get_instance()
 db = mongodb["Customers"]
-collection = db["token"]
+jwt_token = os.environ["jwt_token_key"]
 
 @router.post("/naver")
 async def create_naver_reports(requset: NaverRequsetModel):
@@ -30,10 +34,39 @@ async def create_naver_reports(requset: NaverRequsetModel):
             "customer_id": requset.customer_id,
             "target_date": requset.target_date
         }
+
+@router.get("/kakao/token")
+async def enroll_kakao_token(code: str = Query(...)):
+    """ Token이 모두 만료 되면 수동으로 업데이트 진행"""
+    try:
+        token_manager = KakaoTokenManager()
+        await token_manager.renewal_all_token(code)
+
+        return JSONResponse(
+            status_code = status.HTTP_201_CREATED,
+            content={"message": "카카오 토큰이 성공적으로 등록되었습니다"}
+        )
         
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    
+@router.get("/kakao/test")
+async def test(request: KakakoRequestModel):
+    try:
+        token_manager = KakaoTokenManager()
+        vaild_token = await token_manager.get_vaild_token()
+
+        service = KakaoReportService(vaild_token, request.account_id)
+        result = await service.create_report(request.start_date, request.end_date)
+
+        return result
+    
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    
 @router.post("/kakao")
 def create_kakao_report():
-    token_info = collection.find_one({"media": "kakao"})
+    token_info = db.get_collection("token").find_one({"media": "kakao"})
 
     if token_info is None:
         raise HTTPException(status_code=404, detail="카카오 토큰 정보를 찾을 수 없습니다")
@@ -52,7 +85,7 @@ def create_kakao_report():
             print("refresh token renewed !")
             refresh_token = new_token["refresh_token"]
 
-        collection.update_one({"media": "kakao"}, 
+        db.get_collection("token").update_one({"media": "kakao"}, 
                                {"$set": {"access_token": access_token,
                                          "refresh_token": refresh_token}
                                         })
