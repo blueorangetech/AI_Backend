@@ -10,3 +10,4 @@ file_repository/*
 pandasai.log
 kakao_token.json
 project_key.json
+generate_refresh_token.py

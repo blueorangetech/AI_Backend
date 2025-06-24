@@ -148,11 +148,9 @@ async def keyword_analysis(file: UploadFile = File(...), standard: str = Form(),
         return result
     
     except ValueError as e:
-        print(str(e))
         raise HTTPException(status_code=404, detail=str(e))
     
     except Exception as exc:
-        print(exc)
         raise HTTPException(status_code=404, detail=str(exc))
     
     finally:

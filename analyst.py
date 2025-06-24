@@ -49,6 +49,7 @@ def media_analyst(pre_result, standard, compare, fields, depth, product):
 		agent = general_analyst_description()
 		
 		total_data = []
+		req = ""
 		if len(product): # 상품이 여러 개 존재하는 광고주
 			product_list = pre_result[product[0]].unique()
 
@@ -176,8 +177,3 @@ def keyword_analyst(pre_result, standard, compare, fields, depth):
 	except:
 		print(traceback.format_exc())
 		raise ValueError('데이터 처리 중 문제가 발생했습니다.')
-	
-if __name__ == "__main__":
-	file_path = "C:/Users/blueorange/Desktop/캐롯_리포트.xlsx"
-	result = media_analyst(file_path)
-	print(result)

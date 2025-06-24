@@ -1,13 +1,12 @@
 from clients.naver_api_client import NaverAPIClient
 from reports.report_fields import (naver_campaign_fields, naver_ad_group_fields, 
                             naver_keyword_fields, naver_ad_fields, naver_vaild_fields)
-import os, csv, io
+import os, io
 import pandas as pd
 import time, datetime
 
 class NaverReportService:
     """네이버 리포트 관련 비즈니스 로직을 처리하는 서비스"""
-    
     def __init__(self, naver_client: NaverAPIClient):
         self.client = naver_client
         self.service_dir = os.path.dirname(os.path.abspath(__file__))

@@ -11,12 +11,3 @@ def get_naver_client(customer_id: str):
     }
 
     return NaverAPIClient(**base_config, customer_id=customer_id)
-
-
-def get_kakao_token():
-    
-    return
-
-def get_kakako_client():
-
-    return

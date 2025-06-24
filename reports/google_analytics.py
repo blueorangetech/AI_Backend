@@ -5,7 +5,7 @@ import json, os
 
 gcp_info = os.getenv("GCP_INFO")
 # print(gcp_info)
-key_path = json.loads(gcp_info)
+# key_path = json.loads(gcp_info)
 # client = BetaAnalyticsDataClient.from_service_account_file(key_path)
 
 # request = RunReportRequest(
