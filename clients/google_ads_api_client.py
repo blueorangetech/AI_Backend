@@ -26,7 +26,9 @@ def get_google_client(customer_id):
 ## 단일파일 테스트용 라인 종료 ##
 
 class GoogleAdsAPIClient:
-    def __init__(self, developer_token, client_id, client_secret, refresh_token, login_customer_id, use_proto_plus, customer_id):
+    def __init__(self, developer_token, client_id, client_secret, 
+                 refresh_token, login_customer_id, use_proto_plus, customer_id):
+        
         self.customer_id = customer_id
         self.config = {
             'developer_token': developer_token,
@@ -38,42 +40,6 @@ class GoogleAdsAPIClient:
         }
         
         self.client = GoogleAdsClient.load_from_dict(self.config)
-    
-    def get_campaigns(self):
-        """캠페인 목록 조회"""
-        try:
-            ga_service = self.client.get_service("GoogleAdsService")
-            
-            query = """
-                SELECT
-                    campaign.id,
-                    campaign.name,
-                    campaign.status,
-                    campaign.advertising_channel_type
-                FROM campaign
-                ORDER BY campaign.id
-            """
-            
-            response = ga_service.search(
-                customer_id=self.customer_id,
-                query=query
-            )
-            
-            campaigns = []
-            for row in response:
-                campaign_data = {
-                    'id': row.campaign.id,
-                    'name': row.campaign.name,
-                    'status': row.campaign.status.name,
-                    'type': row.campaign.advertising_channel_type.name
-                }
-                campaigns.append(campaign_data)
-            print(campaigns)
-            return campaigns
-            
-        except GoogleAdsException as ex:
-            print(f"캠페인 조회 실패: {ex}")
-            return []
     
     def create_report(self):
         ga_service = self.client.get_service("GoogleAdsService")
@@ -109,8 +75,8 @@ class GoogleAdsAPIClient:
                     }
             
             reports.append(data)
-        # 여기서 BigQuery로 업로드하면 됨
-        print(len(reports))
+        
+        return reports
         
 
 # 사용 예제

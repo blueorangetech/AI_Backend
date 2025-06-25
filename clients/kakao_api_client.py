@@ -5,7 +5,6 @@ class KakaoAPIClient:
         self.token = token
         self.account_id = account_id
         self.client = httpx.AsyncClient()
-
     
     async def _make_request(self, method, url, params = None):
         headers = {"Authorization": f"Bearer {self.token}","adAccountId": self.account_id}

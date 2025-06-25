@@ -9,8 +9,11 @@ class KakaoReportService:
     async def create_report(self, start_date, end_date):
         index_data = await self._create_report_index()
         report_data = await self._load_report(start_date, end_date)
-        result = await self._merge_index(index_data, report_data)
-        return 
+        merge_data = await self._merge_index(index_data, report_data)
+
+        result = merge_data.to_dict('records')
+        print(result)
+        return result
         
     async def _create_report_index(self):
         campaigns = await self.client.get_campaigns_info()

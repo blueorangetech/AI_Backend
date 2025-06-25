@@ -14,7 +14,7 @@ class NaverReportService:
 
         os.makedirs(self.download_dir, exist_ok=True)
 
-    async def create_complete_report(self, target_date: str = "20250121") -> pd.DataFrame:
+    async def create_complete_report(self, target_date: str) -> list:
         """완전한 네이버 리포트 생성 (마스터 + 통계 데이터)"""
         master_list = ["Campaign", "Adgroup", "Keyword"]
         stat_list = ["AD"]
@@ -107,7 +107,7 @@ class NaverReportService:
 
         return file_path
     
-    def _merge_reports(self, report_list: list) -> pd.DataFrame:
+    def _merge_reports(self, report_list: list) -> list:
         """여러 리포트 파일을 병합하여 하나의 DataFrame으로 만들기"""
         header_list = [
             naver_campaign_fields(), 
@@ -133,12 +133,9 @@ class NaverReportService:
         
         # 필요한 컬럼만 선택
         valid_header = naver_vaild_fields()
-        result = report[valid_header].fillna(0)
+        data_frame = report[valid_header].fillna(0)
         
-        # 결과 저장 (선택사항)
-        file_path = os.path.join(self.download_dir, "naver_result.csv")
-        result.to_csv(file_path, index=False, encoding="euc-kr")
-        
+        result = data_frame.to_dict("records")
         return result
     
     def _cleanup_files(self, file_list: list):
