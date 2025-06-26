@@ -14,7 +14,7 @@ class NaverReportService:
 
         os.makedirs(self.download_dir, exist_ok=True)
 
-    async def create_complete_report(self, target_date: str) -> list:
+    async def create_complete_report(self) -> list:
         """완전한 네이버 리포트 생성 (마스터 + 통계 데이터)"""
         master_list = ["Campaign", "Adgroup", "Keyword"]
         stat_list = ["AD"]
@@ -28,7 +28,7 @@ class NaverReportService:
             
             # 통계 리포트 생성
             for stat in stat_list:
-                file_path = await self._create_and_download_stat_report(stat, target_date)
+                file_path = await self._create_and_download_stat_report(stat)
                 file_list.append(file_path)
             
             # 리포트 병합
@@ -59,10 +59,10 @@ class NaverReportService:
 
         return file_path
     
-    async def _create_and_download_stat_report(self, stat_type: str, target_date: str) -> str:
+    async def _create_and_download_stat_report(self, stat_type: str) -> str:
         """통계 리포트 생성 및 다운로드"""
         # 1. 리포트 생성 요청
-        report_id = await self.client.create_stat_report(stat_type, target_date)
+        report_id = await self.client.create_stat_report(stat_type)
         
         # 2. 완료될 때까지 대기
         download_url = await self._wait_for_report_completion("/stat-reports", report_id)

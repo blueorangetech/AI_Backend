@@ -1,5 +1,4 @@
 from pydantic import BaseModel
 
-class NaverRequsetModel(BaseModel):
+class NaverRequestModel(BaseModel):
     customer_id : str
-    target_date: str

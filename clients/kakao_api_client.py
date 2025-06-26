@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import httpx
 
 class KakaoAPIClient:
@@ -59,10 +60,12 @@ class KakaoAPIClient:
         
         return keywords_info
     
-    async def get_report(self, campaign_id, start_date, end_date):
+    async def get_report(self, campaign_id):
         url = "https://api.keywordad.kakao.com/openapi/v1/keywords/report"
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
+
         params = {"campaignId": campaign_id, "metricsGroups": "BASIC", 
-                  "start": start_date, "end": end_date, "timeUnit": "DAY"}
+                  "start": yesterday, "end": yesterday, "timeUnit": "DAY"}
 
         response = await self._make_request("GET", url, params)
         return response

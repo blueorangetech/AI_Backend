@@ -1,5 +1,6 @@
 import hashlib, time, hmac, base64
 import httpx
+from datetime import datetime, timedelta
 
 class NaverAPIClient:
 
@@ -56,10 +57,11 @@ class NaverAPIClient:
         response.raise_for_status()
         return response
 
-    async def create_stat_report(self, report_type, state_date):
+    async def create_stat_report(self, report_type):
         """ 통계 리포트 생성 API """
         uri = "/stat-reports"
-        data = {"reportTp": report_type, "statDt": state_date}
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
+        data = {"reportTp": report_type, "statDt": yesterday}
 
         response = await self._make_request("POST", uri, data)
         return response.json()["reportJobId"]

@@ -1,6 +1,4 @@
 from pydantic import BaseModel
 
-class KakakoRequestModel(BaseModel):
+class KakaoRequestModel(BaseModel):
     account_id: str
-    start_date: str
-    end_date: str
