@@ -9,9 +9,12 @@ from models.total_request_models import TotalRequestModel
 from models.naver_request_models import NaverRequestModel
 from models.kakao_request_models import KakaoRequestModel
 from models.google_request_models import GoogleAdsRequestModel, GA4RequestModel
+from models.bigquery_schemas import get_naver_search_ad_schema
 from auth.naver_auth_manager import get_naver_client
-from auth.google_auth_manager import get_google_ads_client, get_ga4_client
+from auth.google_auth_manager import get_google_ads_client, get_ga4_client, get_bigquery_client
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.post("/all")
@@ -58,9 +61,27 @@ async def create_naver_reports(requset: NaverRequestModel):
         service = NaverReportService(client)
 
         response = await service.create_complete_report()
+        
         # BigQuery 연결
-
-        return True
+        bigquery_client = get_bigquery_client()
+        
+        # 데이터셋 생성 (없으면 자동 생성)
+        bigquery_client.create_dataset("auto_reporting")
+        
+        # 네이버 검색광고 테이블 스키마 정의
+        schema = get_naver_search_ad_schema()
+        
+        # 테이블 생성 (없으면 자동 생성)
+        bigquery_client.create_table("auto_reporting", "naver_search_ad", schema)
+        
+        # 데이터 삽입
+        table_id = f"{bigquery_client.project_id}.auto_reporting.naver_search_ad"
+        success = bigquery_client.insert_rows(table_id, response)
+        
+        if success:
+            return {"status": "success", "message": f"Successfully inserted {len(response)} rows"}
+        else:
+            return {"status": "error", "message": "Failed to insert data into BigQuery"}
 
     except Exception as e:
         return {
@@ -127,3 +148,13 @@ async def create_ga4_report(request: GA4RequestModel):
     
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@router.get("/test")
+async def test():
+    client = get_bigquery_client()
+    response = client.list_datasets()
+    for res in response:
+        table_info = client.list_tables_in_dataset(res["dataset_id"])
+        logger.info(table_info)
+    
+    return "test"

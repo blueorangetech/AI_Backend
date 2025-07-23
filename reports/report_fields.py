@@ -25,12 +25,12 @@ def naver_keyword_fields():
 def naver_ad_fields():
     ad_report_headers = ["Date", "CUSTOMERID", "CampaignID", "AdGroupID", "AdKeywordID",
                         "ADID", "BusinessChannelID", "Mediacode", "PCMobileType",
-                        "Impression", "Click", "Cost", "SumofADrank", "Viewcount"]
+                        "Impressions", "Clicks", "Cost", "SumofADrank", "Viewcount"]
 
     return ad_report_headers
 
 def naver_vaild_fields():
     vaild_headers = ["Date", "CampaignID", "CampaignName", "AdGroupID", "AdGroupName",
-                     "AdKeywordID", "AdKeyword", "Impression", "Click", "Cost", "SumofADrank"]
+                     "AdKeywordID", "AdKeyword", "Impressions", "Clicks", "Cost", "SumofADrank"]
     
     return vaild_headers

@@ -3,7 +3,9 @@ from reports.report_fields import (naver_campaign_fields, naver_ad_group_fields,
                             naver_keyword_fields, naver_ad_fields, naver_vaild_fields)
 import os, io
 import pandas as pd
-import time, datetime
+import time, datetime, logging
+
+logger = logging.getLogger(__name__)
 
 class NaverReportService:
     """네이버 리포트 관련 비즈니스 로직을 처리하는 서비스"""
@@ -78,11 +80,11 @@ class NaverReportService:
 
         return file_path
     
-    async def _wait_for_report_completion(self, uri: str, report_id: str, max_attempts: int = 10) -> str:
+    async def _wait_for_report_completion(self, uri: str, report_id: str, max_attempts: int = 60) -> str:
         """리포트 완료까지 대기"""
         for attempt in range(max_attempts):
             download_url = await self.client.get_report_status(uri, report_id)
-            
+            logger.info(f"{uri}: {download_url}")
             if download_url["status"] == "BUILT":
                 return download_url["downloadUrl"]
             
@@ -120,20 +122,27 @@ class NaverReportService:
         
         # 각 파일을 DataFrame으로 읽기
         data = {
-            key: pd.read_csv(report, header=None, names=header)
+            key: pd.read_csv(report, header=None, names=header, low_memory=False)
             for key, report, header in zip(keys, report_list, header_list)
         }
         
-        # 데이터 병합
-        master_header = pd.merge(data["campaign"], data["group"], on="CampaignID", how="left")
-        master_header = pd.merge(master_header, data["keyword"], on="AdGroupID", how="left")
+        # 마스터 데이터를 딕셔너리로 변환
+        campaign_dict = data["campaign"].set_index("CampaignID")["CampaignName"].to_dict()
+        adgroup_dict = data["group"].set_index("AdGroupID")["AdGroupName"].to_dict()
+        keyword_dict = data["keyword"].set_index("AdKeywordID")["AdKeyword"].to_dict()
         
-        report = pd.merge(data["ad_result"], master_header, 
-                         on=["CampaignID", "AdGroupID", "AdKeywordID"], how="left")
+        # 통계 데이터에 마스터 정보 매핑
+        report = data["ad_result"].copy()
+        report["CampaignName"] = report["CampaignID"].map(campaign_dict)
+        report["AdGroupName"] = report["AdGroupID"].map(adgroup_dict)
+        report["AdKeyword"] = report["AdKeywordID"].map(keyword_dict)
         
         # 필요한 컬럼만 선택
         valid_header = naver_vaild_fields()
         data_frame = report[valid_header].fillna(0)
+        
+        # Date 컬럼 형식 변환 (yyyymmdd -> yyyy-mm-dd)
+        data_frame['Date'] = pd.to_datetime(data_frame['Date'], format='%Y%m%d').dt.strftime('%Y-%m-%d')
         
         result = data_frame.to_dict("records")
         return result

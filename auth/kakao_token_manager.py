@@ -1,6 +1,9 @@
 from database.mongodb import MongoDB
 import httpx
 import os, jwt
+import logging
+
+logger = logging.getLogger(__name__)
 
 class KakaoTokenManager:
     def __init__(self):
@@ -43,14 +46,6 @@ class KakaoTokenManager:
             # HTTP 에러 (400, 401, 500 등)
             raise Exception(f"카카오 API 호출 실패: {e.response.status_code}")
         
-        except httpx.RequestError as e:
-            # 네트워크 에러
-            raise Exception(f"네트워크 오류: {str(e)}")
-        
-        except ValueError as e:
-            # 데이터 검증 에러
-            raise Exception(f"토큰 데이터 오류: {str(e)}")
-        
         except Exception as e:
             # 기타 에러
             raise Exception(f"토큰 갱신 실패: {str(e)}")
@@ -85,22 +80,29 @@ class KakaoTokenManager:
 
     async def _check_access_token(self, access_token):
         try:
+            logging.info("토큰 유효성 검사를 시작합니다.")
+
             url = "https://kapi.kakao.com/v1/user/access_token_info"
             headers = {"Authorization": f"Bearer {access_token}"}
             response = await self.client.get(url, headers=headers)
 
             if response.status_code == 200:
+                logging.info("토큰이 유효합니다")
                 return True
             
             else:
+                logging.info("토큰이 유효하지 않습니다.")
                 return False
             
         except:
+            logging.info("토큰 검증 작업 오류 발생.")
             return False
     
     async def _refresh_access_token(self, refresh_token):
         """ Refresh 토큰으로 토큰 갱신"""
         try:
+            logging.info("Refresh 토큰으로 갱신을 시도합니다.")
+
             url = "https://kauth.kakao.com/oauth/token"
             headers = {"Content-Type": "application/x-www-form-urlencoded;charset=utf-8"}
             body = {"grant_type": "refresh_token",
@@ -125,9 +127,10 @@ class KakaoTokenManager:
                         }
                     }
                 )
-
+                logging.info("토큰이 갱신되었습니다.")
                 return new_token["access_token"]
 
         except Exception as e:
+            logging.info(f"토큰 갱신 오류 발생: {str(e)}")
             return Exception(f"토큰 갱신 오류 발생: {str(e)}")
     
