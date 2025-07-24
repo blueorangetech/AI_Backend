@@ -64,10 +64,48 @@ class KakaoAPIClient:
         url = "https://api.keywordad.kakao.com/openapi/v1/keywords/report"
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
 
-        params = {"campaignId": campaign_id, "metricsGroups": "BASIC", 
+        params = {"campaignId": campaign_id, "metricsGroups": "BASIC,ADDITION", 
                   "start": yesterday, "end": yesterday, "timeUnit": "DAY"}
 
         response = await self._make_request("GET", url, params)
         return response
     
+    # Kakao Moment
+    async def get_moment_campaigns_info(self):
+        url = "https://apis.moment.kakao.com/openapi/v4/campaigns"
+        response = await self._make_request("GET", url)
+        camgaigns = {}
+
+        for res in response["content"]:
+            camgaigns[str(res["id"])] = res["name"]
+
+        return camgaigns
     
+    async def get_moment_groups_info(self, campaign):
+        url = f"https://apis.moment.kakao.com/openapi/v4/adGroups?campaignId={campaign}"
+        response = await self._make_request("GET", url)
+        groups = {"name": {}, "campaign": {}}
+        
+        for res in response["content"]:
+            groups["name"][str(res["id"])] = res["name"]
+            groups["campaign"][str(res["id"])] = str(campaign)
+
+        return groups
+    
+    async def get_moment_creatives_info(self, group):
+        url = f"https://apis.moment.kakao.com/openapi/v4/creatives?adGroupId={group}"
+        response = await self._make_request("GET", url)
+        creatives = {"name": {}, "group": {}}
+        
+        for res in response["content"]:
+            creatives["name"][str(res["id"])] = res["name"]
+            creatives["group"][str(res["id"])] = str(group)
+        
+        return creatives
+
+    async def get_moment_report(self, creatives):
+        url = "https://apis.moment.kakao.com/openapi/v4/creatives/report"
+        params = f"?datePreset=TODAY&dimension=CREATIVE_FORMAT&metricsGroup=BASIC&creativeId={creatives}"
+
+        response = await self._make_request("GET", url + params)
+        return response["data"]

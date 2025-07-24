@@ -5,14 +5,12 @@ from services.kakao_service import KakaoReportService
 from services.google_service import GoogleAdsReportServices
 from services.ga4_service import GA4ReportServices
 from auth.kakao_token_manager import KakaoTokenManager
-from models.total_request_models import TotalRequestModel
-from models.naver_request_models import NaverRequestModel
-from models.kakao_request_models import KakaoRequestModel
-from models.google_request_models import GoogleAdsRequestModel, GA4RequestModel
-from models.bigquery_schemas import get_naver_search_ad_schema
+from models.media_request_models import (TotalRequestModel, NaverRequestModel, KakaoRequestModel, 
+                                         GoogleAdsRequestModel, GA4RequestModel)
+from models.bigquery_schemas import get_naver_search_ad_schema, get_kakao_search_ad_schema
 from auth.naver_auth_manager import get_naver_client
 from auth.google_auth_manager import get_google_ads_client, get_ga4_client, get_bigquery_client
-import logging
+import logging, time
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -65,30 +63,16 @@ async def create_naver_reports(requset: NaverRequestModel):
         # BigQuery 연결
         bigquery_client = get_bigquery_client()
         
-        # 데이터셋 생성 (없으면 자동 생성)
-        bigquery_client.create_dataset("auto_reporting")
-        
         # 네이버 검색광고 테이블 스키마 정의
         schema = get_naver_search_ad_schema()
         
-        # 테이블 생성 (없으면 자동 생성)
-        bigquery_client.create_table("auto_reporting", "naver_search_ad", schema)
+        # 데이터셋, 테이블 생성 후 삽입 (없으면 자동 생성)
+        result = bigquery_client.insert_start("auto_reporting", "naver_search_ad", schema, response)
         
-        # 데이터 삽입
-        table_id = f"{bigquery_client.project_id}.auto_reporting.naver_search_ad"
-        success = bigquery_client.insert_rows(table_id, response)
-        
-        if success:
-            return {"status": "success", "message": f"Successfully inserted {len(response)} rows"}
-        else:
-            return {"status": "error", "message": "Failed to insert data into BigQuery"}
+        return result
 
     except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e),
-            "customer_id": requset.customer_id
-        }
+        return { "status": "error", "message": str(e)}
     
 @router.post("/kakao")
 async def create_kakao_reports(request: KakaoRequestModel):
@@ -98,14 +82,40 @@ async def create_kakao_reports(request: KakaoRequestModel):
         vaild_token = await token_manager.get_vaild_token()
 
         service = KakaoReportService(vaild_token, request.account_id)
-        result = await service.create_report()
+        response = await service.create_report()
 
-        # BigQuery로 보내기
+         # BigQuery 연결
+        bigquery_client = get_bigquery_client()
+        
+        # 카카오 검색광고 테이블 스키마 정의
+        schema = get_kakao_search_ad_schema()
+        
+        # 데이터셋, 테이블 생성 후 삽입 (없으면 자동 생성)
+        result = bigquery_client.insert_start("auto_reporting", "kakao_search_ad", schema, response)
 
-        return True
+        return result
     
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+@router.post("/kakaomoment")
+async def create_kakao_monent_reports(request: KakaoRequestModel):
+    """ 카카오 모먼트 광고 성과 다운로드 """
+    try:
+        token_manager = KakaoTokenManager()
+        valid_token = await token_manager.get_vaild_token()
+
+        service = KakaoReportService(valid_token, request.account_id)
+        response = await service.create_moment_report()
+
+        # BigQuery 연결
+        bigquery_client = get_bigquery_client()
+        
+        return 
+    
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+        
 
 @router.get("/kakao/token")
 async def enroll_kakao_token(code: str = Query(...)):

@@ -1,6 +1,6 @@
 from google.cloud import bigquery
 from google.oauth2 import service_account
-import logging
+import logging, time
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +10,7 @@ class BigQueryClient:
         self.client = bigquery.Client(credentials=self.credentials, project=self.credentials.project_id)
         self.project_id = self.credentials.project_id
 
-    def create_dataset(self, dataset_id, location="US"):
+    def _create_dataset(self, dataset_id, location="US"):
         dataset_ref = self.client.dataset(dataset_id)
         dataset = bigquery.Dataset(dataset_ref)
         dataset.location = location
@@ -43,7 +43,7 @@ class BigQueryClient:
             logger.error(f"Failed to list datasets: {e}")
             return []
 
-    def create_table(self, dataset_id, table_id, schema):
+    def _create_table(self, dataset_id, table_id, schema):
         table_ref = self.client.dataset(dataset_id).table(table_id)
         table = bigquery.Table(table_ref, schema=schema)
         
@@ -75,10 +75,21 @@ class BigQueryClient:
             logger.error(f"Failed to list tables in dataset {dataset_id}: {e}")
             return []
     
+    def _table_exists(self, dataset_id, table_id):
+        """테이블 존재 여부 확인"""
+        try:
+            table_ref = self.client.dataset(dataset_id).table(table_id)
+            self.client.get_table(table_ref)
+            return True
+        
+        except Exception:
+            return False
+    
     def _summarize_errors(self, errors):
         """BigQuery 삽입 에러를 요약하여 반환"""
         error_summary = {}
         for error_item in errors:
+            logger.info(error_item)
             if isinstance(error_item, dict) and 'errors' in error_item:
                 for err in error_item['errors']:
                     reason = err.get('reason', 'unknown')
@@ -102,7 +113,7 @@ class BigQueryClient:
                 total_error_summary['exception'] = total_error_summary.get('exception', 0) + 1
         return total_error_summary
     
-    def insert_rows(self, table_id, rows, batch_size=7000):
+    def _insert_rows(self, table_id, rows, batch_size=7000):
         """
         BigQuery에 대량 데이터를 배치 처리로 삽입
         
@@ -163,3 +174,27 @@ class BigQueryClient:
         else:
             logger.info(f"All {total_rows} rows successfully inserted into {table_id}")
             return True
+        
+    
+    def insert_start(self, dataset_id, table_id, schema, rows):
+        table_address = f"{self.project_id}.{dataset_id}.{table_id}"
+
+        self._create_dataset(dataset_id)
+
+        if not self._table_exists(dataset_id, table_id):
+            self._create_table(dataset_id, table_id, schema)
+        
+        for interval in range(100):
+            if self._table_exists(dataset_id, table_id):
+                time.sleep(5)
+                success = self._insert_rows(table_address, rows)
+
+                if success:
+                    return {"status": "success", "message": f"Successfully inserted {len(rows)} rows"}
+                
+                else:
+                    return {"status": "error", "message": "Failed to insert data into BigQuery"}
+                
+            time.sleep(0.3)
+
+        return {"status": "error", "message": "Table creation timeout after 30 seconds"}
