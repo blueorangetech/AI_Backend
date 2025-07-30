@@ -1,6 +1,9 @@
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.admin_v1alpha import AnalyticsAdminServiceClient
 from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Metric, Dimension
+import logging
+
+logger = logging.getLogger(__name__)
 
 class GA4APIClient:
     def __init__(self, config, property_id):
@@ -62,5 +65,6 @@ class GA4APIClient:
         properties = []
         for property in response:
             properties.append(property.display_name)
-        
+            logger.info(property)
+            
         return properties

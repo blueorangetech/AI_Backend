@@ -32,24 +32,51 @@ def get_kakao_search_ad_schema():
         bigquery.SchemaField("rank", "FLOAT")
     ]
 
-def get_google_ads_schema():
-    """구글 광고 BigQuery 테이블 스키마"""
+def get_kakao_moment_ad_schema():
+    """카카오 모먼트 BigQuery 테이블 스키마"""
     return [
-        bigquery.SchemaField("campaign_name", "STRING"),
-        bigquery.SchemaField("campaign_id", "STRING"),
-        bigquery.SchemaField("ad_group_name", "STRING"),
-        bigquery.SchemaField("ad_group_id", "STRING"),
-        bigquery.SchemaField("keyword_text", "STRING"),
-        bigquery.SchemaField("keyword_id", "STRING"),
-        bigquery.SchemaField("impressions", "INTEGER"),
-        bigquery.SchemaField("clicks", "INTEGER"),
-        bigquery.SchemaField("cost_micros", "INTEGER"),
-        bigquery.SchemaField("ctr", "FLOAT"),
-        bigquery.SchemaField("average_cpc", "FLOAT"),
-        bigquery.SchemaField("conversions", "FLOAT"),
-        bigquery.SchemaField("conversion_rate", "FLOAT"),
-        bigquery.SchemaField("cost_per_conversion", "FLOAT"),
+        bigquery.SchemaField("date", "Date"),
+        bigquery.SchemaField("campaignID", "STRING"),
+        bigquery.SchemaField("campaignName", "STRING"),
+        bigquery.SchemaField("groupID", "STRING"),
+        bigquery.SchemaField("groupName", "STRING"),
+        bigquery.SchemaField("creativeID", "STRING"),
+        bigquery.SchemaField("creativeName", "STRING"),
+        bigquery.SchemaField("imp", "INTEGER"),
+        bigquery.SchemaField("click", "INTEGER"),
+        bigquery.SchemaField("cost", "FLOAT")
     ]
+
+def get_google_ads_schema():
+    """구글 광고 BigQuery 테이블 스키마. 동적 생성"""
+    FIELD_TYPE_MAP = {
+        # ID 필드들
+        'customer_id': 'STRING',
+        'campaign_id': 'STRING',
+        'ad_group_id': 'STRING',
+        
+        # 이름 필드들  
+        'customer_descriptive_name': 'STRING',
+        'campaign_name': 'STRING',
+        'ad_group_name': 'STRING',
+        'ad_group_criterion_keyword_text': 'STRING',
+        
+        # 날짜 필드들
+        'segments_date': 'DATE',
+        'segments_month': 'STRING',
+        'segments_quarter': 'STRING',
+        
+        # 상태 필드들
+        'campaign_status': 'STRING',
+        'ad_group_status': 'STRING',
+        'ad_group_criterion_status': 'STRING',
+
+        # 지표 필드들
+        'metrics_impressions': 'INTEGER',
+        'metrics_clicks': 'INTEGER',
+        'metrics_cost_micros': 'FLOAT'
+    }
+    return FIELD_TYPE_MAP
 
 def get_ga4_schema():
     """GA4 BigQuery 테이블 스키마"""
