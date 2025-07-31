@@ -11,4 +11,5 @@ class RequestModel(BaseModel):
 async def search_internet(request: RequestModel):
     async with httpx.AsyncClient() as client:
         response = await client.get(request.url)
-        return {"html": response}
+        result = response.text
+        return {"html": result}
