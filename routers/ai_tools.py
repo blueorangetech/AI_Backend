@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-import httpx, logging
+from bs4 import BeautifulSoup
+import httpx, logging, os
 
 router = APIRouter(prefix="/aitools", tags=["aitools"])
 
@@ -9,10 +10,67 @@ logger = logging.getLogger(__name__)
 class RequestModel(BaseModel):
     url: str
 
+class TrendRequestModel(BaseModel):
+    start_date: str
+    end_date: str
+    time_unit: str
+    keyword_groups: list
+
+
 @router.post("/search")
 async def search_internet(request: RequestModel):
     async with httpx.AsyncClient() as client:
-        response = await client.get(request.url)
+        response = await client.get(
+            request.url,
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+            
+        # 제목 추출
+        title_tag = soup.find('title')
+        title = title_tag.get_text(strip=True) if title_tag else ""
+
+        # 메타 설명 추출
+        meta_desc_tag = soup.find('meta', attrs={'name': 'description'})
+        meta_description = meta_desc_tag.get('content', '').strip() if meta_desc_tag else "" # type: ignore
+
+        meta_keyword_tag = soup.find('meta', attrs={'name': 'keyword'})
+        meta_keyword = meta_desc_tag.get('content', '').strip() if meta_desc_tag else "" # type: ignore
+
+        # H1 태그들 추출
+        h1_tags = [h1.get_text(strip=True) for h1 in soup.find_all('h1')]
+
         logger.info(f"GPT use fetchHtml Tool")
-        result = response.text
+        
+        result = {"title": title, "meta_description": meta_description, 
+                  "meta_keyword": meta_keyword, "h1_tags": h1_tags}
+
         return {"html": result}
+    
+@router.post("/trend")
+async def get_trend(request: TrendRequestModel):
+    url = "https://openapi.naver.com/v1/datalab/search"
+
+    headers = {
+        'X-Naver-Client-Id': os.environ["NAVER_CLIENT_ID"],
+        'X-Naver-Client-Secret': os.environ["NAVER_CLIENT_SECRET"],
+        'Content-Type': 'application/json'
+    }
+
+    body = {
+        "startDate": request.start_date,
+        "endDate": request.end_date,
+        "timeUnit": request.time_unit,
+        "keywordGroups": request.keyword_groups
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=body)
+
+    if response.status_code == 200:
+        return response.json()
+    
+    else:
+        print(f"Error: {response.status_code}")
+        print(response.text)
+        return None
+    
