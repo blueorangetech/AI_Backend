@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import analysis, auth, mix_models, reports
+from routers import analysis, auth, mix_models, reports, ai_tools
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -19,6 +19,8 @@ app.include_router(analysis.router)
 app.include_router(auth.router)
 app.include_router(mix_models.router)
 app.include_router(reports.router)
+app.include_router(ai_tools.router)
+
 
 @app.get("/")
 async def hello():
