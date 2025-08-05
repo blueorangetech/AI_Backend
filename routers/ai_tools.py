@@ -30,22 +30,33 @@ async def search_internet(request: RequestModel):
         title_tag = soup.find('title')
         title = title_tag.get_text(strip=True) if title_tag else ""
 
+        meta_og_title_tag = soup.find('meta', attrs={'property': 'og:title'})
+        meta_og_title = meta_og_title_tag.get('content', '').strip() if meta_og_title_tag else "" # type: ignore
+
         # 메타 설명 추출
         meta_desc_tag = soup.find('meta', attrs={'name': 'description'})
         meta_description = meta_desc_tag.get('content', '').strip() if meta_desc_tag else "" # type: ignore
 
-        meta_keyword_tag = soup.find('meta', attrs={'name': 'keyword'})
-        meta_keyword = meta_desc_tag.get('content', '').strip() if meta_desc_tag else "" # type: ignore
+        meta_og_desc_tag = soup.find('meta', attrs={'property': 'og:description'})
+        meta_og_desc = meta_desc_tag.get('content', '').strip() if meta_og_desc_tag else "" # type: ignore
 
         # H1 태그들 추출
         h1_tags = [h1.get_text(strip=True) for h1 in soup.find_all('h1')]
 
+        # P 태그 추출
+        p_tags = [p.get_text(strip=True) for p in soup.find_all('p')]
+
         logger.info(f"GPT use fetchHtml Tool")
         
-        result = {"title": title, "meta_description": meta_description, 
-                  "meta_keyword": meta_keyword, "h1_tags": h1_tags}
+        result = {"title": title, 
+                  "meta_og_title": meta_og_title,
+                  "meta_description": meta_description, 
+                  "meta_og_desc": meta_og_desc,
+                  "h1_tags": h1_tags,
+                  "p_tags": p_tags
+                  }
 
-        return {"html": result}
+        return result
     
 @router.post("/trend")
 async def get_trend(request: TrendRequestModel):
