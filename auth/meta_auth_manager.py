@@ -1,7 +1,7 @@
 from clients.meta_ads_api_client import MetaAdsAPIClient
 import os
 
-def get_meta_ads_client(ad_account_id):
+def get_meta_ads_client(account_id):
     """Meta Ads 클라이언트 생성"""
     config = {
         "access_token": os.environ["META_ACCESS_TOKEN"],
@@ -14,4 +14,4 @@ def get_meta_ads_client(ad_account_id):
         if not value:
             raise ValueError(f"{key.upper()} 환경 변수가 설정되지 않았습니다.")
     
-    return MetaAdsAPIClient(**config, ad_account_id=ad_account_id)
+    return MetaAdsAPIClient(**config, account_id=account_id)

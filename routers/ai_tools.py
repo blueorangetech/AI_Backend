@@ -22,7 +22,9 @@ async def search_internet(request: RequestModel):
     async with httpx.AsyncClient() as client:
         response = await client.get(
             request.url,
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            )
+            
         
         soup = BeautifulSoup(response.text, 'html.parser')
             
@@ -38,7 +40,7 @@ async def search_internet(request: RequestModel):
         meta_description = meta_desc_tag.get('content', '').strip() if meta_desc_tag else "" # type: ignore
 
         meta_og_desc_tag = soup.find('meta', attrs={'property': 'og:description'})
-        meta_og_desc = meta_desc_tag.get('content', '').strip() if meta_og_desc_tag else "" # type: ignore
+        meta_og_desc = meta_og_desc_tag.get('content', '').strip() if meta_og_desc_tag else "" # type: ignore
 
         # H1 태그들 추출
         h1_tags = [h1.get_text(strip=True) for h1 in soup.find_all('h1')]

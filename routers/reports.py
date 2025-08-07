@@ -4,10 +4,12 @@ from services.naver_service import NaverReportService
 from services.kakao_service import KakaoReportService
 from services.google_service import GoogleAdsReportServices
 from services.ga4_service import GA4ReportServices
+from services.meta_service import MetaAdsReportServices
 from auth.kakao_token_manager import KakaoTokenManager
 from models.media_request_models import (TotalRequestModel, NaverRequestModel, 
                                          KakaoRequestModel, KakaoMomentRequestModel,
-                                         GoogleAdsRequestModel, GA4RequestModel)
+                                         GoogleAdsRequestModel, GA4RequestModel,
+                                         MetaAdsRequestModel)
 from models.bigquery_schemas import get_naver_search_ad_schema, get_kakao_search_ad_schema, get_kakao_moment_ad_schema
 from auth.naver_auth_manager import get_naver_client
 from auth.google_auth_manager import get_google_ads_client, get_ga4_client, get_bigquery_client
@@ -177,8 +179,23 @@ async def create_ga4_report(request: GA4RequestModel):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.get("/test")
-async def test():
-    client = get_meta_ads_client("751842441589787")
-    
-    return "test"
+@router.post("/test")
+async def test(request: MetaAdsRequestModel):
+    account_id = request.account_id
+    table_name = request.table_name
+
+    client = get_meta_ads_client(account_id)
+    service = MetaAdsReportServices(client)
+
+    # 임시 변수
+    fields = [
+                "campaign_name",
+                "adset_name",
+                "ad_name",
+                "impressions",
+                "clicks", 
+                "spend",
+                "inline_link_clicks"
+            ]
+    response = await service.create_reports(fields)
+    return response
