@@ -9,6 +9,7 @@ class KakaoReportService:
     def __init__(self, token, account_id):
         self.client = KakaoAPIClient(token, account_id)
     
+    # Kakao Keyword Report
     async def create_report(self):
         campaigns = await self.client.get_campaigns_info()
 
@@ -18,7 +19,9 @@ class KakaoReportService:
         merge_data = await self._merge_index(index_data, report_data)
         
         merge_data["date"] = pd.to_datetime(merge_data["date"]).dt.strftime('%Y-%m-%d')
-        result = merge_data.to_dict('records')
+        keyword_report = merge_data.to_dict('records')
+
+        result = {"kakao_keyword": keyword_report}
         return result
         
     async def _create_report_index(self, campaigns):
@@ -75,6 +78,7 @@ class KakaoReportService:
 
         return report_data
     
+    # Kakao Moment Report
     async def create_moment_report(self):
         index_data = await self._create_moment_index()
         creatives_list = list(index_data["creatives"]["name"].keys())
@@ -87,7 +91,8 @@ class KakaoReportService:
         report["campaignID"] = report["groupID"].map(index_data["groups"]["campaign"])
         report["campaignName"] = report["campaignID"].map(index_data["campaigns"])
 
-        result = report.to_dict('records')
+        kakao_moment = report.to_dict('records')
+        result = {"kakao_moment": kakao_moment}
         return result
     
     async def _create_moment_index(self):

@@ -9,8 +9,8 @@ class BigQueryClient:
         self.credentials = service_account.Credentials.from_service_account_info(config)
         self.client = bigquery.Client(credentials=self.credentials, project=self.credentials.project_id)
         self.project_id = self.credentials.project_id
-
-    def _create_dataset(self, dataset_id, location="US"):
+        
+    def create_dataset(self, dataset_id, location="US"):
         dataset_ref = self.client.dataset(dataset_id)
         dataset = bigquery.Dataset(dataset_ref)
         dataset.location = location
@@ -58,6 +58,16 @@ class BigQueryClient:
                 return self.client.get_table(table_ref)
             else:
                 raise e
+            
+    def _table_exists(self, dataset_id, table_id):
+        """테이블 존재 여부 확인"""
+        try:
+            table_ref = self.client.dataset(dataset_id).table(table_id)
+            self.client.get_table(table_ref)
+            return True
+        
+        except Exception:
+            return False
         
     def list_tables_in_dataset(self, dataset_id):
         try:
@@ -74,16 +84,6 @@ class BigQueryClient:
         except Exception as e:
             logger.error(f"Failed to list tables in dataset {dataset_id}: {e}")
             return []
-    
-    def _table_exists(self, dataset_id, table_id):
-        """테이블 존재 여부 확인"""
-        try:
-            table_ref = self.client.dataset(dataset_id).table(table_id)
-            self.client.get_table(table_ref)
-            return True
-        
-        except Exception:
-            return False
     
     def _summarize_errors(self, errors):
         """BigQuery 삽입 에러를 요약하여 반환"""
@@ -170,7 +170,7 @@ class BigQueryClient:
             # 전체 에러 요약만 로깅
             total_error_summary = self._get_total_error_summary(all_errors)
             logger.error(f"Total error summary: {total_error_summary}")
-            return error_count == 0
+            raise Exception(f"BigQuery 삽입 실패: {error_count}개 rows 실패, 에러: {total_error_summary}")
         else:
             logger.info(f"All {total_rows} rows successfully inserted into {table_id}")
             return True
@@ -179,21 +179,18 @@ class BigQueryClient:
     def insert_start(self, dataset_id, table_id, schema, rows):
         table_address = f"{self.project_id}.{dataset_id}.{table_id}"
 
-        self._create_dataset(dataset_id)
-
         if not self._table_exists(dataset_id, table_id):
             self._create_table(dataset_id, table_id, schema)
         
         for interval in range(100):
             if self._table_exists(dataset_id, table_id):
                 time.sleep(5)
-                success = self._insert_rows(table_address, rows)
-
-                if success:
-                    return {"status": "success", "message": f"Successfully inserted {len(rows)} rows"}
-                
-                else:
-                    return {"status": "error", "message": "Failed to insert data into BigQuery"}
+                try:
+                    success = self._insert_rows(table_address, rows)
+                    if success:
+                        return {"status": "success", "message": f"Successfully inserted {len(rows)} rows"}
+                except Exception as e:
+                    raise Exception(f"BigQuery 데이터 삽입 실패: {str(e)}")
                 
             time.sleep(0.3)
 

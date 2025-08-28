@@ -29,8 +29,21 @@ def naver_ad_fields():
 
     return ad_report_headers
 
+def naver_ad_conversion_fields():
+    ad_conversion_report_headers = ["date", "customerID", "campaignID", "adGroupID", "adKeywordID",
+                        "aDID", "businessChannelID", "mediacode", "pCMobileType",
+                        "conversionMethod", "conversionType", "conversionCount", "salesByConversion"]
+
+    return ad_conversion_report_headers
+
 def naver_vaild_fields():
     vaild_headers = ["date", "campaignID", "campaignName", "adGroupID", "adGroupName",
                      "adKeywordID", "adKeyword", "impressions", "clicks", "cost", "sumofADrank"]
     
     return vaild_headers
+
+def naver_conversion_vaild_fields():
+    conversion_headers = ["date", "campaignID", "campaignName", "adGroupID", "adGroupName",
+                     "adKeywordID", "adKeyword", "conversionType", "conversionCount", "salesByConversion"]
+
+    return conversion_headers

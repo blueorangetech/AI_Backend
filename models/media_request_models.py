@@ -1,11 +1,12 @@
 from pydantic import BaseModel
 
 class TotalRequestModel(BaseModel):
-    data : dict
+    customers : list
 
 class NaverRequestModel(BaseModel):
     customer_id : str
     table_name : str
+    stat_types: list
 
 class KakaoRequestModel(BaseModel):
     account_id: str

@@ -1,6 +1,6 @@
 from google.cloud import bigquery
 
-def get_naver_search_ad_schema():
+def naver_search_ad_schema():
     """네이버 검색광고 BigQuery 테이블 스키마"""
     return [
         bigquery.SchemaField("date", "DATE"),
@@ -16,7 +16,24 @@ def get_naver_search_ad_schema():
         bigquery.SchemaField("sumofADrank", "FLOAT"),
     ]
 
-def get_kakao_search_ad_schema():
+def naver_search_ad_cov_schema():
+    """네이버 검색광고 전환 BigQuery 테이블 스키마"""
+    return [
+        bigquery.SchemaField("date", "DATE"),
+        bigquery.SchemaField("campaignName", "STRING"),
+        bigquery.SchemaField("campaignID", "STRING"),
+        bigquery.SchemaField("adGroupName", "STRING"),
+        bigquery.SchemaField("adGroupID", "STRING"),
+        bigquery.SchemaField("adKeyword", "STRING"),
+        bigquery.SchemaField("adKeywordID", "STRING"),
+        bigquery.SchemaField("conversionType", "STRING"),
+        bigquery.SchemaField("conversionCount", "FLOAT"),
+        bigquery.SchemaField("salesByConversion", "INTEGER")
+    ]
+
+
+
+def kakao_search_ad_schema():
     """카카오 검색광고 BigQuery 테이블 스키마"""
     return [
         bigquery.SchemaField("date", "Date"),
@@ -32,7 +49,7 @@ def get_kakao_search_ad_schema():
         bigquery.SchemaField("rank", "FLOAT")
     ]
 
-def get_kakao_moment_ad_schema():
+def kakao_moment_ad_schema():
     """카카오 모먼트 BigQuery 테이블 스키마"""
     return [
         bigquery.SchemaField("date", "Date"),
@@ -47,7 +64,7 @@ def get_kakao_moment_ad_schema():
         bigquery.SchemaField("cost", "FLOAT")
     ]
 
-def get_google_ads_schema():
+def google_ads_schema():
     """구글 광고 BigQuery 테이블 스키마. 동적 생성"""
     FIELD_TYPE_MAP = {
         # ID 필드들
@@ -78,7 +95,7 @@ def get_google_ads_schema():
     }
     return FIELD_TYPE_MAP
 
-def get_ga4_schema():
+def ga4_schema():
     """GA4 BigQuery 테이블 스키마"""
     return [
         bigquery.SchemaField("date", "DATE"),

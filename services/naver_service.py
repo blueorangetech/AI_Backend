@@ -1,6 +1,7 @@
 from clients.naver_api_client import NaverAPIClient
-from reports.report_fields import (naver_campaign_fields, naver_ad_group_fields, 
-                            naver_keyword_fields, naver_ad_fields, naver_vaild_fields)
+from configs.report_fields import (naver_campaign_fields, naver_ad_group_fields, 
+                            naver_keyword_fields, naver_ad_fields, naver_ad_conversion_fields,
+                            naver_vaild_fields, naver_conversion_vaild_fields)
 import os, io
 import pandas as pd
 import time, datetime, logging
@@ -16,10 +17,9 @@ class NaverReportService:
 
         os.makedirs(self.download_dir, exist_ok=True)
 
-    async def create_complete_report(self) -> list:
+    async def create_complete_report(self, stat_types: list) -> dict:
         """완전한 네이버 리포트 생성 (마스터 + 통계 데이터)"""
         master_list = ["Campaign", "Adgroup", "Keyword"]
-        stat_list = ["AD"]
         file_list = []
         
         try:
@@ -27,11 +27,13 @@ class NaverReportService:
             for master in master_list:
                 file_path = await self._create_and_download_master_report(master)
                 file_list.append(file_path)
+                logger.info(f"{master} 정보 생성 완료")
             
             # 통계 리포트 생성
-            for stat in stat_list:
-                file_path = await self._create_and_download_stat_report(stat)
+            for stat_type in stat_types:
+                file_path = await self._create_and_download_stat_report(stat_type)
                 file_list.append(file_path)
+                logger.info(f"{stat_type} 정보 생성 완료")
             
             # 리포트 병합
             result = self._merge_reports(file_list)
@@ -84,7 +86,6 @@ class NaverReportService:
         """리포트 완료까지 대기"""
         for attempt in range(max_attempts):
             download_url = await self.client.get_report_status(uri, report_id)
-            logger.info(f"{uri}: {download_url}")
             if download_url["status"] == "BUILT":
                 return download_url["downloadUrl"]
             
@@ -109,7 +110,7 @@ class NaverReportService:
 
         return file_path
     
-    def _merge_reports(self, report_list: list) -> list:
+    def _merge_reports(self, report_list: list) -> dict:
         """여러 리포트 파일을 병합하여 하나의 DataFrame으로 만들기"""
         header_list = [
             naver_campaign_fields(), 
@@ -117,9 +118,15 @@ class NaverReportService:
             naver_keyword_fields(), 
             naver_ad_fields()
         ]
-        
+
         keys = ["campaign", "group", "keyword", "ad_result"]
-        
+
+        # 프리미엄 로그분석 : 전환 데이터 추가 읽기 작업
+        if len(report_list) == 5:
+            logger.info("프리미엄 로그분석 대상")
+            header_list.append(naver_ad_conversion_fields())
+            keys.append("conversion")
+
         # 각 파일을 DataFrame으로 읽기
         data = {
             key: pd.read_csv(report, header=None, names=header, low_memory=False)
@@ -127,25 +134,44 @@ class NaverReportService:
         }
         
         # 마스터 데이터를 딕셔너리로 변환
-        campaign_dict = data["campaign"].set_index("CampaignID")["CampaignName"].to_dict()
-        adgroup_dict = data["group"].set_index("AdGroupID")["AdGroupName"].to_dict()
-        keyword_dict = data["keyword"].set_index("AdKeywordID")["AdKeyword"].to_dict()
+        campaign_dict = data["campaign"].set_index("campaignID")["campaignName"].to_dict()
+        adgroup_dict = data["group"].set_index("adGroupID")["adGroupName"].to_dict()
+        keyword_dict = data["keyword"].set_index("adKeywordID")["adKeyword"].to_dict()
         
         # 통계 데이터에 마스터 정보 매핑
-        report = data["ad_result"].copy()
-        report["CampaignName"] = report["CampaignID"].map(campaign_dict)
-        report["AdGroupName"] = report["AdGroupID"].map(adgroup_dict)
-        report["AdKeyword"] = report["AdKeywordID"].map(keyword_dict)
+        report = self._data_mapping(data["ad_result"], campaign_dict, adgroup_dict, keyword_dict)
+
+        logger.info("기본 리포트 매핑 완료")
+        report_header = naver_vaild_fields()
         
         # 필요한 컬럼만 선택
-        valid_header = naver_vaild_fields()
-        data_frame = report[valid_header].fillna(0)
+        basic_result = report[report_header].fillna(0)
         
         # Date 컬럼 형식 변환 (yyyymmdd -> yyyy-mm-dd)
-        data_frame['Date'] = pd.to_datetime(data_frame['Date'], format='%Y%m%d').dt.strftime('%Y-%m-%d')
-        
-        result = data_frame.to_dict("records")
+        basic_result['date'] = pd.to_datetime(basic_result['date'], format='%Y%m%d').dt.strftime('%Y-%m-%d')
+        basic = basic_result.to_dict("records")
+
+        conversion = []
+        # 프리미엄 로그분석: 데이터 추가
+        if len(report_list) == 5:
+            conversion_data = self._data_mapping(data["conversion"], campaign_dict, adgroup_dict, keyword_dict)
+
+            conversion_header = naver_conversion_vaild_fields()
+            conversion_result = conversion_data[conversion_header].fillna(0)
+
+            conversion_result['date'] = pd.to_datetime(conversion_result['date'], format='%Y%m%d').dt.strftime('%Y-%m-%d')
+            conversion = conversion_result.to_dict("records")            
+            logger.info("프리미엄 로그분석 리포트 매핑 완료")
+            
+        result = {"naver_search_ad": basic, "naver_search_ad_conv": conversion}
         return result
+    
+    def _data_mapping(self, report, campaign_dict, adgroup_dict, keyword_dict):
+        """ 리포트 데이터와 마스터 데이터를 매핑"""
+        report["campaignName"] = report["campaignID"].map(campaign_dict)
+        report["adGroupName"] = report["adGroupID"].map(adgroup_dict)
+        report["adKeyword"] = report["adKeywordID"].map(keyword_dict)
+        return report
     
     def _cleanup_files(self, file_list: list):
         """임시 파일들 정리"""
