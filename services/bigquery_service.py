@@ -1,6 +1,7 @@
 from google.cloud import bigquery
 from models.bigquery_schemas import (naver_search_ad_schema, naver_search_ad_cov_schema, 
-                                     kakao_search_ad_schema, kakao_moment_ad_schema, google_ads_schema)
+                                     kakao_search_ad_schema, kakao_moment_ad_schema, 
+                                     google_ads_schema, ga4_schema)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,62 +17,64 @@ class BigQueryReportService:
             "kakao_search_ad": kakao_search_ad_schema(),
             "kakao_moment_ad": kakao_moment_ad_schema(),
             "google_ads": google_ads_schema(),
+            "ga4_schema": ga4_schema(),
         }
     
-    def insert_static_schema(self, table_name: str, reports_data: dict) -> dict:
+    def insert_static_schema(self, data_set_name: str, reports_data: dict) -> dict:
         """정적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
         
-        self.client.create_dataset(table_name)
+        self.client.create_dataset(data_set_name)
         
-        for report_type, data in reports_data.items():
-            result[report_type] = False
+        for table_name, data in reports_data.items():
+            result[table_name] = False
             
             if data:  # 데이터가 있으면
                 try:
-                    schema = self.config.get(report_type, [])
+                    schema = self.config.get(table_name, [])
                     if len(schema) == 0:
                         raise Exception(f"정의된 BigQuery 스키마가 없습니다")
                     
-                    self.client.insert_start(table_name, report_type, schema, data)
-                    result[report_type] = True
-                    logger.info(f"{report_type} 데이터 BigQuery 삽입 완료")
+                    self.client.insert_start(data_set_name, table_name, schema, data)
+                    result[table_name] = True
+                    logger.info(f"{table_name} 데이터 BigQuery 삽입 완료")
 
                 except Exception as e:
-                    logger.error(f"{report_type} BigQuery 삽입 실패: {str(e)}")
-                    result[report_type] = False
+                    logger.error(f"{table_name} BigQuery 삽입 실패: {str(e)}")
+                    result[table_name] = False
             else:
-                logger.warning(f"{report_type} 데이터가 비어있음")
+                logger.warning(f"{table_name} 데이터가 비어있음")
         
         return result
     
-    def insert_daynamic_schema(self, table_name: str, media: str, reports_data: dict) -> dict:
+    def insert_daynamic_schema(self, data_set_name: str, reports_data: dict) -> dict:
         """동적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
         
-        self.client.create_dataset(table_name)
+        self.client.create_dataset(data_set_name)
 
-        basic_schema = self.config[media]
+        for table_name, data in reports_data.items():
+            
+            schema_name = "ga4_schema" if table_name.startswith("ga4") else table_name
+            basic_schema = self.config[schema_name]
 
-        for report_type, data in reports_data.items():
-            schema = self._create_schema(basic_schema, reports_data[media])
-            result[report_type] = False
+            schema = self._create_schema(basic_schema, data)
+            result[table_name] = False
             
             if data:  # 데이터가 있으면
                 try:
-                    schema = self.config.get(report_type, [])
                     if len(schema) == 0:
-                        raise Exception(f"정의된 BigQuery 스키마가 없습니다")
+                        raise Exception(f"생성된 BigQuery 스키마가 없습니다")
                     
-                    self.client.insert_start(table_name, report_type, schema, data)
-                    result[report_type] = True
-                    logger.info(f"{report_type} 데이터 BigQuery 삽입 완료")
+                    self.client.insert_start(data_set_name, table_name, schema, data)
+                    result[table_name] = True
+                    logger.info(f"{table_name} 데이터 BigQuery 삽입 완료")
 
                 except Exception as e:
-                    logger.error(f"{report_type} BigQuery 삽입 실패: {str(e)}")
-                    result[report_type] = False
+                    logger.error(f"{table_name} BigQuery 삽입 실패: {str(e)}")
+                    result[table_name] = False
             else:
-                logger.warning(f"{report_type} 데이터가 비어있음")
+                logger.warning(f"{table_name} 데이터가 비어있음")
         
         return result
         
@@ -88,6 +91,17 @@ class BigQueryReportService:
                 schema_fields.append(bigquery.SchemaField(key, data_type))
 
             else:
-                raise Exception(f"Unknown field '{key}' not found in field_index")
+                # 데이터 타입을 자동으로 추론
+                sample_value = data[0][key]
+                if isinstance(sample_value, int):
+                    data_type = "INTEGER"
+                elif isinstance(sample_value, float):
+                    data_type = "FLOAT"
+                elif isinstance(sample_value, bool):
+                    data_type = "BOOLEAN"
+                else:
+                    data_type = "STRING"
+                
+                schema_fields.append(bigquery.SchemaField(key, data_type))
             
         return schema_fields

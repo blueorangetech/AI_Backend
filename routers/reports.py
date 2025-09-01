@@ -7,14 +7,12 @@ from services.ga4_service import GA4ReportServices
 from services.meta_service import MetaAdsReportServices
 from services.bigquery_service import BigQueryReportService
 from auth.kakao_token_manager import KakaoTokenManager
-from models.media_request_models import (TotalRequestModel, NaverRequestModel, 
-                                         KakaoRequestModel, KakaoMomentRequestModel,
-                                         GoogleAdsRequestModel, GA4RequestModel,
+from models.media_request_models import (TotalRequestModel, MediaRequestModel,
                                          MetaAdsRequestModel)
-from models.bigquery_schemas import naver_search_ad_schema, kakao_search_ad_schema, kakao_moment_ad_schema
 from auth.naver_auth_manager import get_naver_client
 from auth.google_auth_manager import get_google_ads_client, get_ga4_client, get_bigquery_client
 from auth.meta_auth_manager import get_meta_ads_client
+from configs.customers_event import bo_customers
 import logging, time, os
 
 logger = logging.getLogger(__name__)
@@ -25,36 +23,34 @@ async def create_all_report(request: TotalRequestModel):
     try:
         media_config = {
             "naver": {
-                "model_class": NaverRequestModel,
+                "model_class": MediaRequestModel,
                 "handler": create_naver_reports
             },
             "kakao": {
-                "model_class": KakaoRequestModel, 
+                "model_class": MediaRequestModel, 
                 "handler": create_kakao_reports
             },
             "kakao_moment": {
-                "model_class": KakaoMomentRequestModel,
+                "model_class": MediaRequestModel,
                 "handler": create_kakao_monent_reports
             },
             "google_ads": {
-                "model_class": GoogleAdsRequestModel,
+                "model_class": MediaRequestModel,
                 "handler": create_google_report
             },
             "ga4": {
-                "model_class": GA4RequestModel,
+                "model_class": MediaRequestModel,
                 "handler": create_ga4_report
             }
         }
         result = {}
+        
         for customer in request.customers:
-            table_name = customer["table_name"]
-
-            for media in customer["media_list"]:
-
+            for media in bo_customers[customer]["media_list"].keys():
+                
                 if media in media_config:
                     platform_data = {
-                        **customer["media_list"][media],
-                        "table_name": table_name
+                        "customer": customer
                     }
                     # 매체별 처리
                     config = media_config[media]
@@ -76,12 +72,13 @@ async def create_all_report(request: TotalRequestModel):
         return {"status": "error", "message": str(e)}
 
 @router.post("/naver")
-async def create_naver_reports(request: NaverRequestModel):
+async def create_naver_reports(request: MediaRequestModel):
     """ 네이버 광고 성과 다운로드 """
     try:
-        customer_id = request.customer_id
-        table_name = request.table_name
-        stat_types = request.stat_types
+        customer = request.customer
+        customer_id = bo_customers[customer]["media_list"]["naver"]["customer_id"]
+        data_set_name = bo_customers[customer]["data_set_name"]
+        stat_types = bo_customers[customer]["media_list"]["naver"]["stat_types"]
 
         client = get_naver_client(customer_id)
         service = NaverReportService(client)
@@ -92,7 +89,7 @@ async def create_naver_reports(request: NaverRequestModel):
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
         
-        result = bigquery_service.insert_static_schema(table_name, response)
+        result = bigquery_service.insert_static_schema(data_set_name, response)
                 
         return result
 
@@ -100,10 +97,13 @@ async def create_naver_reports(request: NaverRequestModel):
         return { "status": "error", "message": str(e)}
     
 @router.post("/kakao")
-async def create_kakao_reports(request: KakaoRequestModel):
+async def create_kakao_reports(request: MediaRequestModel):
     """ 카카오 광고 성과 다운로드 """
     try:
-        account_id, table_name = request.account_id, request.table_name
+        customer = request.customer
+        account_id = bo_customers[customer]["media_list"]["kakao"]["account_id"]
+        data_set_name = bo_customers[customer]["data_set_name"]
+        
         token_manager = KakaoTokenManager()
         vaild_token = await token_manager.get_vaild_token()
 
@@ -115,7 +115,7 @@ async def create_kakao_reports(request: KakaoRequestModel):
         bigquery_service = BigQueryReportService(bigquery_client)
         
         # 데이터셋, 테이블 생성 후 삽입 (없으면 자동 생성)
-        result = bigquery_service.insert_static_schema(table_name, response)
+        result = bigquery_service.insert_static_schema(data_set_name, response)
 
         return result
     
@@ -123,10 +123,12 @@ async def create_kakao_reports(request: KakaoRequestModel):
         return {"status": "error", "message": str(e)}
     
 @router.post("/kakaomoment")
-async def create_kakao_monent_reports(request: KakaoMomentRequestModel):
+async def create_kakao_monent_reports(request: MediaRequestModel):
     """ 카카오 모먼트 광고 성과 다운로드 """
     try:
-        account_id, table_name = request.account_id, request.table_name
+        customer = request.customer
+        account_id = bo_customers[customer]["media_list"]["kakao"]["account_id"]
+        data_set_name = bo_customers[customer]["data_set_name"]
 
         token_manager = KakaoTokenManager()
         valid_token = await token_manager.get_vaild_token()
@@ -138,7 +140,7 @@ async def create_kakao_monent_reports(request: KakaoMomentRequestModel):
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
 
-        result = bigquery_service.insert_static_schema(table_name, response)
+        result = bigquery_service.insert_static_schema(data_set_name, response)
 
         return result
     
@@ -161,39 +163,63 @@ async def enroll_kakao_token(code: str = Query(...)):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.post("/google/test")
-async def create_google_report(request: GoogleAdsRequestModel):
+@router.post("/google")
+async def create_google_report(request: MediaRequestModel):
     """ 구글 광고 성과 다운로드 """
     try:
-        customer_id = request.customer_id
-        fields = request.fields
-        table_name =  request.table_name
+        customer = request.customer
+        
+        customer_info = bo_customers[customer]["media_list"]["google_ads"]
+        data_set_name = bo_customers[customer]["data_set_name"]
+        
+        customer_id = customer_info["customer_id"]
+        logger.info(f"{customer} google ads id : {customer_id}")
 
+        fields = customer_info["fields"]
+        view_level = customer_info["view_level"]
+        logger.info(f"{customer} google ads fields : {fields}")
+        
         client = get_google_ads_client(customer_id)
         service = GoogleAdsReportServices(client)
 
-        response = service.create_reports(fields)
+        response = service.create_reports(fields, view_level)
 
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
 
         # BigQuery로 보내기
-        result = bigquery_service.insert_daynamic_schema(table_name, "google_ads", response)
+        result = bigquery_service.insert_daynamic_schema(data_set_name, response)
 
         return result
     
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.post("/ga4/test")
-async def create_ga4_report(request: GA4RequestModel):
+@router.post("/ga4")
+async def create_ga4_report(request: MediaRequestModel):
     try:
-        client = get_ga4_client(request.property_id)
+        customer = request.customer
+        customer_info = bo_customers[customer]["media_list"]["ga4"]
+        data_set_name = bo_customers[customer]["data_set_name"]
+
+        property_id = customer_info["property_id"]
+
+        navigation_reports = customer_info["fields"]
+        
+        client = get_ga4_client(property_id)
         service = GA4ReportServices(client)
 
-        response = service.properties_list()
+        bigquery_client = get_bigquery_client()
+        bigquery_service = BigQueryReportService(bigquery_client)
 
-        return response
+        # BigQuery로 보내기
+        results = {}
+        for report_type, data in navigation_reports.items():
+            response = service.create_report(data, report_type)
+            result = bigquery_service.insert_daynamic_schema(data_set_name, response)
+            results.update(result)
+
+        return results
     
     except Exception as e:
         return {"status": "error", "message": str(e)}

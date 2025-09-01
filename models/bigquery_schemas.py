@@ -97,16 +97,22 @@ def google_ads_schema():
 
 def ga4_schema():
     """GA4 BigQuery 테이블 스키마"""
-    return [
-        bigquery.SchemaField("date", "DATE"),
-        bigquery.SchemaField("source", "STRING"),
-        bigquery.SchemaField("medium", "STRING"),
-        bigquery.SchemaField("campaign", "STRING"),
-        bigquery.SchemaField("sessions", "INTEGER"),
-        bigquery.SchemaField("users", "INTEGER"),
-        bigquery.SchemaField("page_views", "INTEGER"),
-        bigquery.SchemaField("bounce_rate", "FLOAT"),
-        bigquery.SchemaField("avg_session_duration", "FLOAT"),
-        bigquery.SchemaField("conversions", "INTEGER"),
-        bigquery.SchemaField("conversion_rate", "FLOAT"),
-    ]
+    FIELD_TYPE_MAP = {
+        'date' : 'DATE',
+        'source' : 'STRING',
+        'medium' : 'STRING',
+        'sessionManualAdContent': 'STRING',
+        'sessionManualAdContent': 'STRING',
+        'campaign' : 'STRING',
+        'sessions' : 'INTEGER',
+        'users' : 'INTEGER',
+        'page_views' : 'INTEGER',
+        'bounce_rate' : 'FLOAT',
+        'avg_session_duration' : 'FLOAT',
+        'conversions' : 'INTEGER',
+        'conversion_rate' : 'FLOAT',
+        'eventCount': 'INTEGER',
+        'eventValue': 'FLOAT',
+        'activUsers': 'INTEGER',
+    }
+    return FIELD_TYPE_MAP

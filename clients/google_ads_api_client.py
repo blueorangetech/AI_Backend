@@ -28,13 +28,13 @@ class GoogleAdsAPIClient:
             logger.error(f"API 연결 실패: {e}")
             return {'valid': False, 'error': str(e)}
     
-    def create_report(self, fields):
+    def create_report(self, fields, view_level):
         ga_service = self.client.get_service("GoogleAdsService")
+        selected_fields = ",".join(fields)
         query = f"""
-                SELECT 
-                    segments.date,
-                    {fields}
-                FROM keyword_view
+                SELECT
+                    {selected_fields}
+                {view_level}
                 WHERE segments.date DURING YESTERDAY AND metrics.impressions > 0
         """
         response = ga_service.search(customer_id = self.customer_id, query = query)

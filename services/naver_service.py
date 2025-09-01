@@ -122,7 +122,8 @@ class NaverReportService:
         keys = ["campaign", "group", "keyword", "ad_result"]
 
         # 프리미엄 로그분석 : 전환 데이터 추가 읽기 작업
-        if len(report_list) == 5:
+        conversion_files = [f for f in report_list if "AD_CONVERSION_report" in f]
+        if conversion_files:
             logger.info("프리미엄 로그분석 대상")
             header_list.append(naver_ad_conversion_fields())
             keys.append("conversion")
@@ -152,8 +153,9 @@ class NaverReportService:
         basic = basic_result.to_dict("records")
 
         conversion = []
+        
         # 프리미엄 로그분석: 데이터 추가
-        if len(report_list) == 5:
+        if conversion_files:
             conversion_data = self._data_mapping(data["conversion"], campaign_dict, adgroup_dict, keyword_dict)
 
             conversion_header = naver_conversion_vaild_fields()

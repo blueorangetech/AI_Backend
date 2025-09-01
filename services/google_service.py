@@ -9,16 +9,14 @@ class GoogleAdsReportServices:
     def __init__(self, google_client: GoogleAdsAPIClient):
         self.client = google_client
     
-    def create_reports(self, fields):
-        response = self.client.create_report(fields)
-        logger.info(response)
-        field_list = [field.strip() for field in fields.split(",")]
+    def create_reports(self, fields, view_level):
+        response = self.client.create_report(fields, view_level)
 
         reports = []
         for row in response:
             logger.info(row)
             data = {}
-            for field in field_list:
+            for field in fields:
                 dict_key = field.replace(".", "_")
                 data[dict_key] = self._get_nested_value(row, field)
             
@@ -35,6 +33,10 @@ class GoogleAdsReportServices:
             
             for part in parts:
                 current = getattr(current, part)
+            
+            # enum 타입이면 .name으로 텍스트 값 반환
+            if hasattr(current, 'name') and hasattr(current, 'value'):
+                return current.name
             
             return current
         except AttributeError:
