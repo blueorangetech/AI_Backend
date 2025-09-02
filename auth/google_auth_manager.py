@@ -5,6 +5,7 @@ import os, logging, requests
 
 logger = logging.getLogger(__name__)
 
+
 def _get_gcp_config():
     """공통 GCP 인증 설정 반환"""
 
@@ -19,14 +20,15 @@ def _get_gcp_config():
         "token_uri": os.environ["GA4_TOKEN_URI"],
         "auth_provider_x509_cert_url": os.environ["GA4_AUTH_PROVIDER_X509_CERT_URL"],
         "client_x509_cert_url": os.environ["GA4_CLIENT_X509_CRET_URL"],
-        "universe_domain": os.environ["GA4_UNIVERSE_DOMAIN"]
+        "universe_domain": os.environ["GA4_UNIVERSE_DOMAIN"],
     }
-    
+
     for key, value in config.items():
         if not value:
             raise ValueError(f"{key.upper()} 환경 변수가 설정되지 않았습니다.")
-    
+
     return config
+
 
 def get_google_ads_client(customer_id):
     """Google Ads 클라이언트 생성"""
@@ -36,21 +38,22 @@ def get_google_ads_client(customer_id):
         "client_secret": os.environ["GOOGLE_ADS_CLIENT_SECRET"],
         "refresh_token": os.environ["GOOGLE_ADS_REFRESH_TOKEN"],
         "login_customer_id": os.environ["GOOGLE_ADS_LOGIN_CUSTOMER_ID"],
-        "use_proto_plus": True
+        "use_proto_plus": True,
     }
 
     # 필수 환경 변수 검증
     for key, value in config.items():
         if not value:
             raise ValueError(f"{key.upper()} 환경 변수가 설정되지 않았습니다.")
-    
-    return GoogleAdsAPIClient(config, customer_id = customer_id)
+
+    return GoogleAdsAPIClient(config, customer_id=customer_id)
 
 
 def get_ga4_client(property_id):
     """GA4 클라이언트 생성"""
     config = _get_gcp_config()
     return GA4APIClient(config, property_id)
+
 
 def get_bigquery_client():
     config = _get_gcp_config()

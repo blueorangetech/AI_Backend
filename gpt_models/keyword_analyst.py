@@ -1,11 +1,10 @@
-
 def makerter_description():
     descrition = {
-      "role": "system",
-      "content": [
-        {
-          "type": "text",
-          "text": """
+        "role": "system",
+        "content": [
+            {
+                "type": "text",
+                "text": """
                     당신은 10년차 데이터 분석가다.
 
                     광고비는 대한민국 원을 기준으로 한다.
@@ -32,8 +31,8 @@ def makerter_description():
                     분석 결과 제시 시, 문장 단위로 줄 바꿈한다.
                     
                     성공적으로 데이터 분석 결과를 반환하면, $100 의 팁을 주겠다.
-                    """
-        }
-      ]
+                    """,
+            }
+        ],
     }
     return descrition

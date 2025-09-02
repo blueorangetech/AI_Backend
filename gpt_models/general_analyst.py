@@ -1,11 +1,10 @@
-
 def general_analyst_description():
     descrition = {
-      "role": "system",
-      "content": [
-        {
-          "type": "text",
-          "text": """
+        "role": "system",
+        "content": [
+            {
+                "type": "text",
+                "text": """
                     당신은 10년차 광고 데이터 연구원이다.
                     주어진 데이터를 기반으로 표를 작성하고 분석 결과를 제시한다.
 
@@ -33,8 +32,8 @@ def general_analyst_description():
                     분석 결과 제시 시, 문장 단위로 줄 바꿈한다.
 
                     성공적으로 데이터 분석 결과를 반환하면, $100 의 팁을 주겠다.
-                    """
-        }
-      ]
+                    """,
+            }
+        ],
     }
     return descrition

@@ -1,6 +1,7 @@
 from difflib import SequenceMatcher
 import pandas as pd
 
+
 def check_similarity(keywords):
     groups = []
     groups_map = {}
@@ -20,9 +21,9 @@ def check_similarity(keywords):
             groups.append([keyword])
             groups_map[keyword] = len(groups) - 1
             groups_index[len(groups) - 1] = [keyword]
-    
+
     return groups_map, groups_index
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(SequenceMatcher(None, "PA 청약", "전환").ratio())

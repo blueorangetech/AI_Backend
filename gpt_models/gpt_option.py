@@ -3,6 +3,7 @@ from tools.math_tool import mathematics, mathematics_description
 from tools.ai_analyst import summary_data, summary_data_description
 from tools.group_data import group_data
 
+
 def interim_report(msg, agent=None):
     funtcions = [
         # mathematics_description(),
@@ -13,40 +14,40 @@ def interim_report(msg, agent=None):
 
     while True:
         response = openai.ChatCompletion.create(
-            model='gpt-4o-mini',
-            messages = message,
-            temperature = 0.7,
+            model="gpt-4o-mini",
+            messages=message,
+            temperature=0.7,
             # functions = funtcions,
             # function_call="auto"
-            )
-        
-        response_message = response['choices'][0]['message']
+        )
+
+        response_message = response["choices"][0]["message"]
 
         print(f"prompt tokens: {response['usage']['prompt_tokens']}")
         print(f"completion tokens: {response['usage']['completion_tokens']}")
         print(f"total tokens: {response['usage']['total_tokens']}")
 
-        if response_message.get('function_call'):
+        if response_message.get("function_call"):
             available_function = {
                 # "mathematics" : mathematics,
                 # "summary_data": summary_data,
             }
 
-            function_name = response_message['function_call']['name']
+            function_name = response_message["function_call"]["name"]
 
             function_to_call = available_function[function_name]
-            function_args = json.loads(response_message['function_call']['arguments'])
-            
-            function_response = function_to_call(
-                arguments = function_args
-            )
-            
+            function_args = json.loads(response_message["function_call"]["arguments"])
+
+            function_response = function_to_call(arguments=function_args)
+
             message.append(response_message)
-            message.append({
-                'role': 'function',
-                'name': function_name,
-                'content' : function_response
-            })
+            message.append(
+                {
+                    "role": "function",
+                    "name": function_name,
+                    "content": function_response,
+                }
+            )
 
         else:
-            return response_message['content']
+            return response_message["content"]
