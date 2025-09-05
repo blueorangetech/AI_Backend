@@ -92,7 +92,7 @@ async def create_naver_reports(request: MediaRequestModel):
         service = NaverReportService(client)
 
         response = await service.create_complete_report(master_list, stat_types)
-        return
+        
         # BigQuery 연결
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)

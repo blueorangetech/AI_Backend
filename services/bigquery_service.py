@@ -23,7 +23,7 @@ class BigQueryReportService:
             "NAVER_AD": naver_search_ad_schema(),
             "NAVER_AD_CONVERSION": naver_search_ad_cov_schema(),
             "NAVER_SHOPPINGKEYWORD_DETAIL" :naver_shopping_ad_schema(),
-            "NAVER_SHOPPINGKEYWORD_CONVERSION_DETAI": naver_shopping_ad_cov_schema(),
+            "NAVER_SHOPPINGKEYWORD_CONVERSION_DETAIL": naver_shopping_ad_cov_schema(),
             "kakao_search_ad": kakao_search_ad_schema(),
             "kakao_moment_ad": kakao_moment_ad_schema(),
             "GOOGLE_ADS": google_ads_schema(),

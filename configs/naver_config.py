@@ -155,7 +155,7 @@ naver_master_config = {
     "Campaign": {"id": "campaignID", "name": "campaignName"},
     "Adgroup": {"id": "adGroupID", "name": "adGroupName"},
     "Keyword": {"id": "adKeywordID", "name": "adKeyword"},
-    "ShoppingProduct": {"id": "adID", "name": "adProductName"}
+    "ShoppingProduct": {"id": "adID", "name": "productName"}
 }
 
 
@@ -193,7 +193,7 @@ naver_vaild_fields = {
         "adGroupName",
         "searchKeyword",
         "adID",
-        "adProductName",
+        "productName",
         "impressions",
         "clicks",
         "cost",
@@ -207,7 +207,7 @@ naver_vaild_fields = {
         "adGroupName",
         "searchKeyword",
         "adID",
-        "adProductName",
+        "productName",
         "conversionType",
         "conversionCount",
         "salesByConversion",

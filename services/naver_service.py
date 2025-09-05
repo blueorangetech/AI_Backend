@@ -165,11 +165,12 @@ class NaverReportService:
             for basic in basics:
                 config_data = naver_master_config[basic]
                 id, name = config_data["id"], config_data["name"]
-                report[name] = report[id].map(master_dict[basic])
+                report[name] = report[id].map(master_dict[basic]).fillna("-")
             
             report["date"] = pd.to_datetime(report["date"], format="%Y%m%d").dt.strftime("%Y-%m-%d")
-            report.to_dict("records")
-
+            valid_header = naver_vaild_fields[stat_type]
+            report = report[valid_header]
+            report = report.to_dict("records")
             result[f"NAVER_{stat_type}"] = report
             basics.pop()
 
