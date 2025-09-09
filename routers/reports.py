@@ -12,7 +12,7 @@ from models.media_request_models import (
     MediaRequestModel,
     MetaAdsRequestModel,
 )
-from auth.naver_auth_manager import get_naver_client
+from auth.naver_auth_manager import get_naver_client, get_gfa_client
 from auth.google_auth_manager import (
     get_google_ads_client,
     get_ga4_client,
@@ -20,7 +20,7 @@ from auth.google_auth_manager import (
 )
 from auth.meta_auth_manager import get_meta_ads_client
 from configs.customers_event import bo_customers
-import logging, time, os
+import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -104,6 +104,13 @@ async def create_naver_reports(request: MediaRequestModel):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+
+@router.post("/gfa")
+async def create_gfa_reports():
+    """GFA 광고 성과 다운로드"""
+    client = get_gfa_client()
+    response = await client.get_manage_accounts()
+    return response
 
 @router.post("/kakao")
 async def create_kakao_reports(request: MediaRequestModel):
