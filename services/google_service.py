@@ -14,7 +14,6 @@ class GoogleAdsReportServices:
 
         reports = []
         for row in response:
-            logger.info(row)
             data = {}
             for field in fields:
                 dict_key = field.replace(".", "_")

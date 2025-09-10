@@ -51,8 +51,9 @@ async def create_all_report(request: TotalRequestModel):
         result = {}
 
         for customer in request.customers:
-            for media in bo_customers[customer]["media_list"].keys():
+            result[customer] = {}
 
+            for media in bo_customers[customer]["media_list"].keys():    
                 if media in media_config:
                     platform_data = {"customer": customer}
                     # 매체별 처리
@@ -63,11 +64,7 @@ async def create_all_report(request: TotalRequestModel):
                 else:
                     response = "지원하지 않는 매체입니다."
 
-                result[media] = response
-
-        for res in result:
-            if not result[res]:
-                return {"status": "some success", "message": result}
+                result[customer][media] = response
 
         return {"status": "success", "message": result}
 
@@ -227,7 +224,7 @@ async def create_ga4_report(request: MediaRequestModel):
 
         client = get_ga4_client(property_id)
         service = GA4ReportServices(client)
-
+        
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
 
