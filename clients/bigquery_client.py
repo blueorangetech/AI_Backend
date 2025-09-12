@@ -1,6 +1,7 @@
 from google.cloud import bigquery
 from google.oauth2 import service_account
-import logging, time
+import logging, time, io, json
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,6 @@ class BigQueryClient:
         """BigQuery 삽입 에러를 요약하여 반환"""
         error_summary = {}
         for error_item in errors:
-            logger.info(error_item)
             if isinstance(error_item, dict) and "errors" in error_item:
                 for err in error_item["errors"]:
                     reason = err.get("reason", "unknown")
@@ -114,14 +114,14 @@ class BigQueryClient:
                 )
         return total_error_summary
 
-    def _insert_rows(self, table_id, rows, batch_size=7000):
+    def _insert_rows(self, table_id, rows, batch_size=50000):
         """
-        BigQuery에 대량 데이터를 배치 처리로 삽입
+        BigQuery에 배치 로드 방식으로 대량 데이터 삽입
 
         Args:
             table_id: 테이블 ID (project.dataset.table 형식)
             rows: 삽입할 데이터 리스트
-            batch_size: 배치 크기 (기본값: 1000)
+            batch_size: 배치 크기 (기본값: 50000)
 
         Returns:
             bool: 전체 삽입 성공 여부
@@ -134,11 +134,10 @@ class BigQueryClient:
             return True
 
         logger.info(
-            f"Starting batch insert: {total_rows} rows with batch size {batch_size}"
+            f"Starting batch load: {total_rows} rows with batch size {batch_size}"
         )
 
         success_count = 0
-        error_count = 0
         all_errors = []
 
         # 배치로 나누어 처리
@@ -148,44 +147,55 @@ class BigQueryClient:
             total_batches = (total_rows + batch_size - 1) // batch_size
 
             try:
-                errors = self.client.insert_rows_json(table_ref, batch)
-
-                if errors:
-                    # 에러 요약 정보만 로깅
-                    error_summary = self._summarize_errors(errors)
-                    logger.error(
-                        f"Batch {batch_number}/{total_batches}: {len(errors)} errors - {error_summary}"
-                    )
-                    all_errors.extend(errors)
-                    error_count += len(errors)
-                    success_count += len(batch) - len(errors)
-                else:
-                    logger.info(
-                        f"Batch {batch_number}/{total_batches}: Successfully inserted {len(batch)} rows"
-                    )
-                    success_count += len(batch)
+                # DataFrame으로 변환
+                df = pd.DataFrame(batch)
+                
+                # NDJSON 형식으로 변환
+                ndjson_data = df.to_json(orient='records', lines=True, date_format='iso')
+                
+                # 메모리 파일 객체 생성 (bytes로 변환)
+                file_obj = io.BytesIO(ndjson_data.encode('utf-8'))
+                
+                # 배치 로드 작업 설정
+                job_config = bigquery.LoadJobConfig(
+                    source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+                    write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+                    autodetect=False,  # 스키마 자동 감지 비활성화
+                    ignore_unknown_values=True  # 알 수 없는 필드 무시
+                )
+                
+                # 로드 작업 실행
+                job = self.client.load_table_from_file(
+                    file_obj, table_ref, job_config=job_config
+                )
+                
+                # 작업 완료 대기
+                job.result()
+                
+                logger.info(
+                    f"Batch {batch_number}/{total_batches}: Successfully loaded {len(batch)} rows"
+                )
+                success_count += len(batch)
 
             except Exception as e:
                 logger.error(
-                    f"Batch {batch_number}/{total_batches}: Exception occurred - {str(e)}"
+                    f"Batch {batch_number}/{total_batches}: Load job failed - {str(e)}"
                 )
                 all_errors.append({"batch": batch_number, "error": str(e)})
-                error_count += len(batch)
 
         # 최종 결과 로깅
         logger.info(
-            f"Insert completed: {success_count} successful, {error_count} failed out of {total_rows} total rows"
+            f"Batch load completed: {success_count} successful out of {total_rows} total rows"
         )
 
         if all_errors:
-            # 전체 에러 요약만 로깅
-            total_error_summary = self._get_total_error_summary(all_errors)
-            logger.error(f"Total error summary: {total_error_summary}")
+            error_count = total_rows - success_count
+            logger.error(f"Total errors: {len(all_errors)} batches failed")
             raise Exception(
-                f"BigQuery 삽입 실패: {error_count}개 rows 실패, 에러: {total_error_summary}"
+                f"BigQuery 배치 로드 실패: {error_count}개 rows 실패, 에러 수: {len(all_errors)}"
             )
         else:
-            logger.info(f"All {total_rows} rows successfully inserted into {table_id}")
+            logger.info(f"All {total_rows} rows successfully loaded into {table_id}")
             return True
 
     def insert_start(self, dataset_id, table_id, schema, rows):

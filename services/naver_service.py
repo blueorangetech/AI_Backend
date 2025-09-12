@@ -1,6 +1,7 @@
 from clients.naver_api_client import NaverAPIClient
 from configs.naver_config import naver_field_master, naver_master_config, naver_vaild_fields
-import os, io
+from models.bigquery_schemas import naver_search_ad_schema, naver_search_ad_cov_schema, naver_shopping_ad_schema, naver_shopping_ad_cov_schema
+import os, io, csv
 import pandas as pd
 import time, datetime, logging
 
@@ -105,7 +106,7 @@ class NaverReportService:
 
         # 파일 저장
         tsv_data = url_request.content.decode("utf-8")
-        df = pd.read_csv(io.StringIO(tsv_data), delimiter="\t")
+        df = pd.read_csv(io.StringIO(tsv_data), delimiter="\t", quoting=csv.QUOTE_NONE)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"{file_name}_report_{timestamp}.csv"
         file_path = os.path.join(self.download_dir, file_name)
@@ -130,10 +131,31 @@ class NaverReportService:
 
         # 각 파일을 DataFrame으로 읽기
         data ={}
+        
+        # 스키마 매핑
+        schema_map = {
+            'AD': naver_search_ad_schema(),
+            'AD_CONVERSION': naver_search_ad_cov_schema(),
+            'SHOPPINGKEYWORD_DETAIL': naver_shopping_ad_schema(),
+            'SHOPPINGKEYWORD_CONVERSION_DETAIL': naver_shopping_ad_cov_schema()
+        }
+        
         for key, report in zip(keys, report_list):
-            data[key] = pd.read_csv(report, header=None, names=header_list[key], 
-                                    low_memory=False, index_col=False)
-
+            df = pd.read_csv(report, header=None, names=header_list[key], 
+                           low_memory=False, index_col=False)
+            
+            # 해당 스키마의 INTEGER 필드 찾기
+            if key in schema_map:
+                integer_fields = [field.name for field in schema_map[key] 
+                                if field.field_type == 'INTEGER']
+                
+                # INTEGER 필드를 정수로 변환
+                for col in integer_fields:
+                    if col in df.columns:
+                        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+            
+            data[key] = df
+            
         logger.info(f"Report Load Complete")
         # 마스터 데이터를 딕셔너리로 변환
         master_dict = {}
