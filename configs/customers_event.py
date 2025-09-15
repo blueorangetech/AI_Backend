@@ -61,4 +61,13 @@ bo_customers = {
                       },
         },
     },
+    "htb": {
+        "data_set_name": "htb",
+        "media_list": {
+            "naver": {"customer_id": "2881738",
+                      "master_list" : ["Campaign", "Adgroup", "ShoppingProduct"],
+                      "stat_types": ["SHOPPINGKEYWORD_DETAIL", "SHOPPINGKEYWORD_CONVERSION_DETAIL"]
+                      }
+        },
+    },
 }
