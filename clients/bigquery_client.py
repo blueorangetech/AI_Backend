@@ -1,5 +1,6 @@
 from google.cloud import bigquery
 from google.oauth2 import service_account
+from datetime import datetime
 import logging, time, io, json
 import pandas as pd
 
@@ -70,6 +71,30 @@ class BigQueryClient:
 
         except Exception:
             return False
+
+    def check_date_exists(self, dataset_id, table_id, insert_date):
+        """특정 날짜의 데이터가 이미 존재하는지 확인"""
+        if not self._table_exists(dataset_id, table_id):
+            return False
+            
+        try:
+            query = f"""
+            SELECT COUNT(*) as count
+            FROM `{self.project_id}.{dataset_id}.{table_id}`
+            WHERE date = DATE('{insert_date}')
+            """
+            
+            query_job = self.client.query(query)
+            results = query_job.result()
+            
+            for row in results:
+                return row.count > 0
+                
+        except Exception as e:
+            logger.warning(f"Failed to check date existence: {str(e)}")
+            return False
+            
+        return False
 
     def list_tables_in_dataset(self, dataset_id):
         try:

@@ -30,7 +30,7 @@ class BigQueryReportService:
             "GA4": ga4_schema(),
         }
 
-    def insert_static_schema(self, data_set_name: str, reports_data: dict) -> dict:
+    def insert_static_schema(self, data_set_name: str, reports_data: dict, date_column: str = "date") -> dict:
         """정적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
 
@@ -41,6 +41,13 @@ class BigQueryReportService:
 
             if data:  # 데이터가 있으면
                 try:
+                    # 날짜 중복 체크
+                    insert_date = data[0]['date']
+                    if self.client.check_date_exists(data_set_name, table_name, insert_date):
+                        logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
+                        result[table_name] = "skipped_duplicate_date"
+                        continue
+
                     schema = self.config.get(table_name, [])
                     if len(schema) == 0:
                         raise Exception(f"정의된 BigQuery 스키마가 없습니다")
@@ -57,7 +64,7 @@ class BigQueryReportService:
 
         return result
 
-    def insert_daynamic_schema(self, data_set_name: str, reports_data: dict) -> dict:
+    def insert_daynamic_schema(self, data_set_name: str, reports_data: dict, date_column: str = "date") -> dict:
         """동적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
 
@@ -73,6 +80,13 @@ class BigQueryReportService:
 
             if data:  # 데이터가 있으면
                 try:
+                    # 날짜 중복 체크
+                    insert_date = data[0]['date']
+                    if self.client.check_date_exists(data_set_name, table_name, insert_date):
+                        logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
+                        result[table_name] = "skipped_duplicate_date"
+                        continue
+
                     if len(schema) == 0:
                         raise Exception(f"생성된 BigQuery 스키마가 없습니다")
 
