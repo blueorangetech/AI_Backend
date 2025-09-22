@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 import httpx
+from utils.http_client_manager import get_http_client
 
 
 class KakaoAPIClient:
     def __init__(self, token, account_id):
         self.token = token
         self.account_id = account_id
-        self.client = httpx.AsyncClient()
 
     async def _make_request(self, method, url, params=None):
         headers = {
@@ -15,7 +15,8 @@ class KakaoAPIClient:
         }
 
         if method.upper() == "GET":
-            response = await self.client.get(url, headers=headers, params=params)
+            client = await get_http_client()
+            response = await client.get(url, headers=headers, params=params)
 
         else:
             raise ValueError(f"지원하지 않는 요청입니다: {method}")

@@ -3,6 +3,7 @@ import logging
 import jwt
 import urllib.parse
 from datetime import datetime
+from utils.http_client_manager import get_http_client
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,6 @@ class GFAAPIClient:
         self.base_url = base_url
         self.access_token = access_token
         self.refresh_token = refresh_token
-        self.client = httpx.AsyncClient()
 
     async def _make_request(self, method, uri, data=None):
         url = self.base_url + uri
@@ -22,7 +22,8 @@ class GFAAPIClient:
         if method.upper() == "GET":
             logger.info("요청 처리중")
             logger.info(f"인코딩된 토큰: {encoded_token}")
-            response = await self.client.get(url, headers=headers)
+            client = await get_http_client()
+            response = await client.get(url, headers=headers)
             return response
         
         else:

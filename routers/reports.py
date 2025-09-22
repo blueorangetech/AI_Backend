@@ -94,7 +94,7 @@ async def create_naver_reports(request: MediaRequestModel):
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
 
-        result = bigquery_service.insert_static_schema(data_set_name, response)
+        result = await bigquery_service.insert_static_schema(data_set_name, response)
 
         return result
 
@@ -128,7 +128,7 @@ async def create_kakao_reports(request: MediaRequestModel):
         bigquery_service = BigQueryReportService(bigquery_client)
 
         # 데이터셋, 테이블 생성 후 삽입 (없으면 자동 생성)
-        result = bigquery_service.insert_static_schema(data_set_name, response)
+        result = await bigquery_service.insert_static_schema(data_set_name, response)
 
         return result
 
@@ -154,7 +154,7 @@ async def create_kakao_monent_reports(request: MediaRequestModel):
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
 
-        result = bigquery_service.insert_static_schema(data_set_name, response)
+        result = await bigquery_service.insert_static_schema(data_set_name, response)
 
         return result
 
@@ -203,7 +203,7 @@ async def create_google_report(request: MediaRequestModel):
         bigquery_service = BigQueryReportService(bigquery_client)
 
         # BigQuery로 보내기
-        result = bigquery_service.insert_daynamic_schema(data_set_name, response)
+        result = await bigquery_service.insert_daynamic_schema(data_set_name, response)
 
         return result
 
@@ -232,7 +232,7 @@ async def create_ga4_report(request: MediaRequestModel):
         results = {}
         for report_type, data in navigation_reports.items():
             response = service.create_report(data, report_type)
-            result = bigquery_service.insert_daynamic_schema(data_set_name, response)
+            result = await bigquery_service.insert_daynamic_schema(data_set_name, response)
             results.update(result)
 
         return results

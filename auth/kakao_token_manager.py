@@ -1,4 +1,5 @@
 from database.mongodb import MongoDB
+from utils.http_client_manager import get_http_client
 import httpx
 import os, jwt
 import logging
@@ -8,11 +9,14 @@ logger = logging.getLogger(__name__)
 
 class KakaoTokenManager:
     def __init__(self):
-        self.db = MongoDB.get_instance()["Customers"]
-        self.client = httpx.AsyncClient()
         self.jwt_token = os.environ["jwt_token_key"]
         self.client_id = os.environ["KAKAO_CLIENT_ID"]
         self.redirect_uri = os.environ["KAKAO_REDIRECT_URL"]
+
+    async def _get_db(self):
+        """MongoDB 데이터베이스 연결 반환"""
+        mongo_client = await MongoDB.get_instance()
+        return mongo_client["Customers"]
 
     async def renewal_all_token(self, code):
         url = "https://kauth.kakao.com/oauth/token"
@@ -25,7 +29,8 @@ class KakaoTokenManager:
         }
 
         try:
-            response = await self.client.post(url, data=data)
+            client = await get_http_client()
+            response = await client.post(url, data=data)
             tokens = response.json()
             access_token, refresh_token = (
                 tokens["access_token"],
@@ -35,7 +40,8 @@ class KakaoTokenManager:
             token = {"access_token": access_token, "refresh_token": refresh_token}
             encode_token = jwt.encode(token, self.jwt_token, algorithm="HS256")
 
-            self.db.get_collection("token").update_one(
+            db = await self._get_db()
+            db.get_collection("token").update_one(
                 {"media": "kakao"}, {"$set": {"token": encode_token}}, upsert=True
             )
 
@@ -66,7 +72,8 @@ class KakaoTokenManager:
 
     async def _get_token_info(self):
         try:
-            kakao_token = self.db.get_collection("token").find_one({"media": "kakao"})
+            db = await self._get_db()
+            kakao_token = db.get_collection("token").find_one({"media": "kakao"})
             if not kakao_token:
                 raise Exception("토큰이 데이터베이스에 없습니다.")
 
@@ -90,7 +97,8 @@ class KakaoTokenManager:
 
             url = "https://kapi.kakao.com/v1/user/access_token_info"
             headers = {"Authorization": f"Bearer {access_token}"}
-            response = await self.client.get(url, headers=headers)
+            client = await get_http_client()
+            response = await client.get(url, headers=headers)
 
             if response.status_code == 200:
                 logging.info("토큰이 유효합니다")
@@ -119,7 +127,8 @@ class KakaoTokenManager:
                 "refresh_token": refresh_token,
             }
 
-            response = await self.client.post(url, headers=headers, data=body)
+            client = await get_http_client()
+            response = await client.post(url, headers=headers, data=body)
 
             result = response.json()
             if response.status_code == 200:
@@ -135,7 +144,8 @@ class KakaoTokenManager:
                     new_token, self.jwt_token, algorithm="HS256"
                 )
 
-                self.db.get_collection("token").update_one(
+                db = await self._get_db()
+                db.get_collection("token").update_one(
                     {"media": "kakao"}, {"$set": {"token": encode_new_token}}
                 )
                 logging.info("토큰이 갱신되었습니다.")

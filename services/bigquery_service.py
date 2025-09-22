@@ -30,11 +30,11 @@ class BigQueryReportService:
             "GA4": ga4_schema(),
         }
 
-    def insert_static_schema(self, data_set_name: str, reports_data: dict, date_column: str = "date") -> dict:
+    async def insert_static_schema(self, data_set_name: str, reports_data: dict, date_column: str = "date") -> dict:
         """정적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
 
-        self.client.create_dataset(data_set_name)
+        await self.client.create_dataset(data_set_name)
 
         for table_name, data in reports_data.items():
             result[table_name] = False
@@ -43,7 +43,7 @@ class BigQueryReportService:
                 try:
                     # 날짜 중복 체크
                     insert_date = data[0]['date']
-                    if self.client.check_date_exists(data_set_name, table_name, insert_date):
+                    if await self.client.check_date_exists(data_set_name, table_name, insert_date):
                         logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
                         result[table_name] = "skipped_duplicate_date"
                         continue
@@ -52,7 +52,7 @@ class BigQueryReportService:
                     if len(schema) == 0:
                         raise Exception(f"정의된 BigQuery 스키마가 없습니다")
 
-                    self.client.insert_start(data_set_name, table_name, schema, data)
+                    await self.client.insert_start(data_set_name, table_name, schema, data)
                     result[table_name] = True
                     logger.info(f"{table_name} 데이터 BigQuery 삽입 완료")
 
@@ -64,11 +64,11 @@ class BigQueryReportService:
 
         return result
 
-    def insert_daynamic_schema(self, data_set_name: str, reports_data: dict, date_column: str = "date") -> dict:
+    async def insert_daynamic_schema(self, data_set_name: str, reports_data: dict, date_column: str = "date") -> dict:
         """동적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
 
-        self.client.create_dataset(data_set_name)
+        await self.client.create_dataset(data_set_name)
 
         for table_name, data in reports_data.items():
 
@@ -82,7 +82,7 @@ class BigQueryReportService:
                 try:
                     # 날짜 중복 체크
                     insert_date = data[0]['date']
-                    if self.client.check_date_exists(data_set_name, table_name, insert_date):
+                    if await self.client.check_date_exists(data_set_name, table_name, insert_date):
                         logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
                         result[table_name] = "skipped_duplicate_date"
                         continue
@@ -90,7 +90,7 @@ class BigQueryReportService:
                     if len(schema) == 0:
                         raise Exception(f"생성된 BigQuery 스키마가 없습니다")
 
-                    self.client.insert_start(data_set_name, table_name, schema, data)
+                    await self.client.insert_start(data_set_name, table_name, schema, data)
                     result[table_name] = True
                     logger.info(f"{table_name} 데이터 BigQuery 삽입 완료")
 

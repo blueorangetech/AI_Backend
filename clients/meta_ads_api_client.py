@@ -2,6 +2,7 @@ import requests
 import httpx
 import logging, dotenv, json
 import pandas as pd
+from utils.http_client_manager import get_http_client
 
 dotenv.load_dotenv()
 logger = logging.getLogger(__name__)
@@ -14,7 +15,6 @@ class MetaAdsAPIClient:
         self.app_secret = app_secret
         self.account_id = account_id
         self.base_url = "https://graph.facebook.com/v23.0"
-        self.client = httpx.AsyncClient()
 
     async def _make_request(self, endpoint, params=None):
         """API 요청 공통 함수"""
@@ -26,7 +26,8 @@ class MetaAdsAPIClient:
         url = f"{self.base_url}/{endpoint}"
 
         try:
-            response = await self.client.get(url, params=params)
+            client = await get_http_client()
+            response = await client.get(url, params=params)
             response.raise_for_status()
             return response.json()
 
