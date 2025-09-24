@@ -24,13 +24,13 @@ class BigQueryReportService:
             "NAVER_AD_CONVERSION": naver_search_ad_cov_schema(),
             "NAVER_SHOPPINGKEYWORD_DETAIL" :naver_shopping_ad_schema(),
             "NAVER_SHOPPINGKEYWORD_CONVERSION_DETAIL": naver_shopping_ad_cov_schema(),
-            "kakao_search_ad": kakao_search_ad_schema(),
-            "kakao_moment_ad": kakao_moment_ad_schema(),
+            "KAKAO_SEARCH": kakao_search_ad_schema(),
+            "KAKAO_MOMENT": kakao_moment_ad_schema(),
             "GOOGLE_ADS": google_ads_schema(),
             "GA4": ga4_schema(),
         }
 
-    async def insert_static_schema(self, data_set_name: str, reports_data: dict, date_column: str = "date") -> dict:
+    async def insert_static_schema(self, data_set_name: str, reports_data: dict) -> dict:
         """정적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
 
@@ -42,7 +42,8 @@ class BigQueryReportService:
             if data:  # 데이터가 있으면
                 try:
                     # 날짜 중복 체크
-                    insert_date = data[0]['date']
+                    insert_date = data[0]['segments_date'] if table_name == "GOOGLE_ADS" else data[0]['date']
+
                     if await self.client.check_date_exists(data_set_name, table_name, insert_date):
                         logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
                         result[table_name] = "skipped_duplicate_date"
@@ -64,7 +65,7 @@ class BigQueryReportService:
 
         return result
 
-    async def insert_daynamic_schema(self, data_set_name: str, reports_data: dict, date_column: str = "date") -> dict:
+    async def insert_daynamic_schema(self, data_set_name: str, reports_data: dict) -> dict:
         """동적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
 
@@ -81,7 +82,8 @@ class BigQueryReportService:
             if data:  # 데이터가 있으면
                 try:
                     # 날짜 중복 체크
-                    insert_date = data[0]['date']
+                    insert_date = data[0]['segments_date'] if table_name == "GOOGLE_ADS" else data[0]['date']
+
                     if await self.client.check_date_exists(data_set_name, table_name, insert_date):
                         logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
                         result[table_name] = "skipped_duplicate_date"

@@ -32,10 +32,14 @@ class GoogleAdsReportServices:
 
             for part in parts:
                 current = getattr(current, part)
-
+            
             # enum 타입이면 .name으로 텍스트 값 반환
             if hasattr(current, "name") and hasattr(current, "value"):
                 return current.name
+
+            # final_urls 리스트인 경우 첫 번째 요소만 반환
+            if hasattr(current, '__iter__') and not isinstance(current, str) and current:
+                return list(current)[0]
 
             return current
         except AttributeError:

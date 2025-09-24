@@ -85,7 +85,7 @@ class KakaoTokenManager:
             access_token, refresh_token = decoded_token.get(
                 "access_token"
             ), decoded_token.get("refresh_token")
-
+            
             return {"access_token": access_token, "refresh_token": refresh_token}
 
         except Exception as e:
@@ -131,6 +131,9 @@ class KakaoTokenManager:
             response = await client.post(url, headers=headers, data=body)
 
             result = response.json()
+            logging.info(f"토큰 갱신 응답 상태: {response.status_code}")
+            logging.info(f"토큰 갱신 응답 내용: {result}")
+
             if response.status_code == 200:
                 new_token = {}
                 new_token["access_token"] = result["access_token"]
@@ -150,6 +153,9 @@ class KakaoTokenManager:
                 )
                 logging.info("토큰이 갱신되었습니다.")
                 return new_token["access_token"]
+            else:
+                logging.error(f"토큰 갱신 실패: {response.status_code} - {result}")
+                raise Exception(f"토큰 갱신 실패: {response.status_code}")
 
         except Exception as e:
             logging.info(f"토큰 갱신 오류 발생: {str(e)}")

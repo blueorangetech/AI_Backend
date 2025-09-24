@@ -21,7 +21,7 @@ class KakaoReportService:
         merge_data["date"] = pd.to_datetime(merge_data["date"]).dt.strftime("%Y-%m-%d")
         keyword_report = merge_data.to_dict("records")
 
-        result = {"kakao_keyword": keyword_report}
+        result = {"KAKAO_SEARCH": keyword_report}
         return result
 
     async def _create_report_index(self, campaigns):
@@ -117,7 +117,7 @@ class KakaoReportService:
         report["campaignName"] = report["campaignID"].map(index_data["campaigns"])
 
         kakao_moment = report.to_dict("records")
-        result = {"kakao_moment": kakao_moment}
+        result = {"KAKAO_MOMENT": kakao_moment}
         return result
 
     async def _create_moment_index(self):

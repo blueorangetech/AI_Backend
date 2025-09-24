@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, reports, ai_tools
+from routers import reports
 from utils.http_client_manager import cleanup_http_client
 from utils.bigquery_client_manager import cleanup_all_bigquery_clients
 from database.mongodb import MongoDB
@@ -29,9 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
 app.include_router(reports.router)
-app.include_router(ai_tools.router)
 
 
 @app.get("/")

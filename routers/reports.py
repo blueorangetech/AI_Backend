@@ -141,7 +141,7 @@ async def create_kakao_monent_reports(request: MediaRequestModel):
     """카카오 모먼트 광고 성과 다운로드"""
     try:
         customer = request.customer
-        account_id = bo_customers[customer]["media_list"]["kakao"]["account_id"]
+        account_id = bo_customers[customer]["media_list"]["kakao_moment"]["account_id"]
         data_set_name = bo_customers[customer]["data_set_name"]
 
         token_manager = KakaoTokenManager()
