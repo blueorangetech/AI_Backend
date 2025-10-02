@@ -242,22 +242,30 @@ async def create_ga4_report(request: MediaRequestModel):
 
 
 @router.post("/test")
-async def test(request: MetaAdsRequestModel):
-    account_id = request.account_id
-    table_name = request.table_name
+async def test(request: MediaRequestModel):
+    try:
+        customer = request.customer
+        customer_info = bo_customers[customer]["media_list"]["meta"]
+        data_set_name = bo_customers[customer]["data_set_name"]
 
-    client = get_meta_ads_client(account_id)
-    service = MetaAdsReportServices(client)
+        account_id = customer_info["meta"]
+        
+        client = get_meta_ads_client(account_id)
+        service = MetaAdsReportServices(client)
 
-    # 임시 변수
-    fields = [
-        "campaign_name",
-        "adset_name",
-        "ad_name",
-        "impressions",
-        "clicks",
-        "spend",
-        "inline_link_clicks",
-    ]
-    response = await service.create_reports(fields)
-    return response
+        # 임시 변수
+        fields = [
+            "campaign_name",
+            "adset_name",
+            "ad_name",
+            "impressions",
+            "clicks",
+            "spend",
+            "inline_link_clicks",
+        ]
+        response = await service.create_reports(fields)
+        return response
+    
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
