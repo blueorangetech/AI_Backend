@@ -35,6 +35,7 @@ class MetaAdsAPIClient:
             logger.error(f"Meta API 요청 실패: {e}")
             raise
 
+
     async def verify_account_in_list(self):
         """내 계정 목록에서 특정 계정 찾기"""
         endpoint = "me/adaccounts"

@@ -94,6 +94,17 @@ bo_customers = {
                     "metrics.conversions",
                 ],
                 "view_level": "From ad_group_ad",
+            },
+            "meta": {
+                "account_id":"1223120648245224",
+                "fields": ["campaign_name",
+                           "adset_name",
+                           "ad_name",
+                           "impressions",
+                           "clicks",
+                           "spend",
+                           "inline_link_clicks",
+                ]
             }
         }
     }

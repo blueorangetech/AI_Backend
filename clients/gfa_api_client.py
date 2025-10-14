@@ -1,6 +1,4 @@
-import httpx
 import logging
-import jwt
 import urllib.parse
 from datetime import datetime
 from utils.http_client_manager import get_http_client
