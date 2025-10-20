@@ -1,8 +1,6 @@
 from database.mongodb import MongoDB
 from utils.http_client_manager import get_http_client
-import httpx
-import os, jwt
-import logging
+import os, jwt, logging
 
 logger = logging.getLogger(__name__)
 
@@ -44,15 +42,9 @@ class KakaoTokenManager:
             db.get_collection("token").update_one(
                 {"media": "kakao"}, {"$set": {"token": encode_token}}, upsert=True
             )
-
             return True
-
-        except httpx.HTTPStatusError as e:
-            # HTTP 에러 (400, 401, 500 등)
-            raise Exception(f"카카오 API 호출 실패: {e.response.status_code}")
-
+        
         except Exception as e:
-            # 기타 에러
             raise Exception(f"토큰 갱신 실패: {str(e)}")
 
     async def get_vaild_token(self):
@@ -82,9 +74,9 @@ class KakaoTokenManager:
             decoded_token = jwt.decode(
                 encoded_token, self.jwt_token, algorithms="HS256"
             )
-            access_token, refresh_token = decoded_token.get(
-                "access_token"
-            ), decoded_token.get("refresh_token")
+
+            access_token = decoded_token.get("access_token")
+            refresh_token = decoded_token.get("refresh_token")
             
             return {"access_token": access_token, "refresh_token": refresh_token}
 
@@ -109,7 +101,7 @@ class KakaoTokenManager:
                 return False
 
         except:
-            logging.info("토큰 검증 작업 오류 발생.")
+            logging.error("토큰 검증 작업 오류 발생.")
             return False
 
     async def _refresh_access_token(self, refresh_token):

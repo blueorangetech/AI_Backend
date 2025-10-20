@@ -14,3 +14,7 @@ class MetaAdsRequestModel(BaseModel):
     table_name: str
     start_date: str | None = None
     end_date: str | None = None
+
+class GFATokenRequestModel(BaseModel):
+    code : str
+    state : str

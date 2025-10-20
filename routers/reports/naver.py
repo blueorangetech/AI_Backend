@@ -1,17 +1,17 @@
 from fastapi import APIRouter
 from models.media_request_models import MediaRequestModel
 from services.naver_service import NaverReportService
+from auth.gfa_token_manager import GFATokenManager
 from clients.gfa_api_client import GFAAPIClient
+from services.gfa_service import GFAReportService
 from auth.naver_auth_manager import get_naver_client, get_gfa_client
 from services.bigquery_service import BigQueryReportService
 from auth.google_auth_manager import get_bigquery_client
 from configs.customers_event import bo_customers
 import logging
 
-
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/naver", tags=["reports"])
-
 
 @router.post("/ads")
 async def create_naver_reports(request: MediaRequestModel):
@@ -47,11 +47,13 @@ async def create_naver_reports(request: MediaRequestModel):
 async def create_gfa_reports(request: MediaRequestModel):
     """GFA 광고 성과 다운로드"""
     try:
-        client = get_gfa_client()
-        response = await client.get_manage_accounts()
+        token_manager = GFATokenManager()
+        access_token = await token_manager.get_vaild_token()
+
+        client = get_gfa_client(access_token, "3419")
+        service = GFAReportService(client)
+        response = await service.get_performance_data()
         return response
-    
+
     except Exception as e:
         return {"status": "error", "message": str(e)}
-    
-
