@@ -73,13 +73,16 @@ bo_customers = {
     "baemin_restaurant":{
         "data_set_name": "baemin_restaurant",
         "media_list": {
-            # "naver": {"customer_id": "1821082",
-            #           "master_list" : ["Campaign", "Adgroup", "Keyword"],
-            #           "stat_types": ["AD"],
-            #           },
-            # "kakao_moment":{
-            #     "account_id": "620017"
-            # },
+            "naver": {"customer_id": "1821082",
+                      "master_list" : ["Campaign", "Adgroup", "Keyword"],
+                      "stat_types": ["AD"],
+                      },
+            "kakao_moment":{
+                "account_id": "620017"
+            },
+            "gfa": {
+                "customer_id": "66953"
+            },
             "google_ads": {
                 "customer_id": "7107846694",
                 "fields": [
@@ -97,13 +100,14 @@ bo_customers = {
             },
             "meta": {
                 "account_id":"1223120648245224",
-                "fields": ["campaign_name",
-                           "adset_name",
-                           "ad_name",
-                           "impressions",
-                           "clicks",
-                           "spend",
-                           "inline_link_clicks",
+                "fields": [
+                    "date_start",
+                    "campaign_name",
+                    "adset_name",
+                    "ad_name",
+                    "impressions",
+                    "clicks",
+                    "spend",
                 ]
             }
         }

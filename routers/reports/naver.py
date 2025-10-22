@@ -2,7 +2,6 @@ from fastapi import APIRouter
 from models.media_request_models import MediaRequestModel
 from services.naver_service import NaverReportService
 from auth.gfa_token_manager import GFATokenManager
-from clients.gfa_api_client import GFAAPIClient
 from services.gfa_service import GFAReportService
 from auth.naver_auth_manager import get_naver_client, get_gfa_client
 from services.bigquery_service import BigQueryReportService
@@ -47,13 +46,26 @@ async def create_naver_reports(request: MediaRequestModel):
 async def create_gfa_reports(request: MediaRequestModel):
     """GFA 광고 성과 다운로드"""
     try:
+        customer = request.customer
+        customer_info = bo_customers[customer]["media_list"]["gfa"] 
+        data_set_name = bo_customers[customer]["data_set_name"]
+
+        customer_id = customer_info["customer_id"]
+        data_set_name = request.customer
         token_manager = GFATokenManager()
         access_token = await token_manager.get_vaild_token()
 
-        client = get_gfa_client(access_token, "3419")
+        client = get_gfa_client(access_token, customer_id)
         service = GFAReportService(client)
         response = await service.get_performance_data()
-        return response
+        
+        # BigQuery 연결
+        bigquery_client = get_bigquery_client()
+        bigquery_service = BigQueryReportService(bigquery_client)
+
+        result = await bigquery_service.insert_static_schema(data_set_name, response)
+
+        return result
 
     except Exception as e:
         return {"status": "error", "message": str(e)}

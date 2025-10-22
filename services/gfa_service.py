@@ -1,7 +1,7 @@
 from clients.gfa_api_client import GFAAPIClient
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
-import logging
+import logging, asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,11 @@ class GFAReportService:
             data["campaign_name"] = index["campaigns"][data["campaignNo"]]
             data["adset_name"] = index["adsets"][data["adSetNo"]]
             data["creative_name"] = index["creatives"][data["creativeNo"]]
+            data["date"] = data.pop("targetDate")
             report.append(data)
         
-        return report
+        result = {"NAVER_GFA": report}
+        return result
 
     async def get_ad_structure_list(self, target):
         """ 캠페인, 광고그룹, 소재 목록 반환"""
@@ -44,6 +46,7 @@ class GFAReportService:
         total_page = int(response.get("totalPages", 1))
         
         for page in range(1, total_page):
+            await asyncio.sleep(0.5)
             response = await api_list[target](page)
             structure_list.extend(response.get("content", []))
 

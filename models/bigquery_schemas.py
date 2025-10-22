@@ -66,6 +66,25 @@ def naver_shopping_ad_cov_schema():
         bigquery.SchemaField("salesByConversion", "INTEGER"),
     ]
 
+def naver_gfa_schema():
+    """네이버 GFA BigQuery 테이블 스키마"""
+    return [
+        bigquery.SchemaField("date", "DATE"),
+        bigquery.SchemaField("campaignNo", "INTEGER"),
+        bigquery.SchemaField("campaign_name", "STRING"),
+        bigquery.SchemaField("adSetNo", "INTEGER"),
+        bigquery.SchemaField("adset_name", "STRING"),
+        bigquery.SchemaField("creativeNo", "INTEGER"),
+        bigquery.SchemaField("creative_name", "STRING"),
+        bigquery.SchemaField("impCount", "INTEGER"),
+        bigquery.SchemaField("clickCount", "INTEGER"),
+        bigquery.SchemaField("vplayCount", "INTEGER"),
+        bigquery.SchemaField("sales", "FLOAT"),
+        bigquery.SchemaField("convCount", "INTEGER"),
+        bigquery.SchemaField("convSales", "FLOAT"),
+        bigquery.SchemaField("updatedAt", "TIMESTAMP"),
+    ]
+
 def kakao_search_ad_schema():
     """카카오 검색광고 BigQuery 테이블 스키마"""
     return [
@@ -146,5 +165,18 @@ def ga4_schema():
         "eventCount": "INTEGER",
         "eventValue": "FLOAT",
         "activUsers": "INTEGER",
+    }
+    return FIELD_TYPE_MAP
+
+def meta_schema():
+    """META BigQuery 테이블 스키마"""
+    FIELD_TYPE_MAP = {
+        "date": "DATE",
+        "campaign_name": "STRING",
+        "adset_name": "STRING",
+        "ad_name": "STRING",
+        "impressions": "INTEGER",
+        "clicks": "INTEGER",
+        "spend": "FLOAT",
     }
     return FIELD_TYPE_MAP

@@ -4,10 +4,12 @@ from models.bigquery_schemas import (
     naver_search_ad_cov_schema,
     naver_shopping_ad_schema,
     naver_shopping_ad_cov_schema,
+    naver_gfa_schema,
     kakao_search_ad_schema,
     kakao_moment_ad_schema,
     google_ads_schema,
     ga4_schema,
+    meta_schema,
 )
 import logging
 
@@ -24,10 +26,12 @@ class BigQueryReportService:
             "NAVER_AD_CONVERSION": naver_search_ad_cov_schema(),
             "NAVER_SHOPPINGKEYWORD_DETAIL" :naver_shopping_ad_schema(),
             "NAVER_SHOPPINGKEYWORD_CONVERSION_DETAIL": naver_shopping_ad_cov_schema(),
+            "NAVER_GFA": naver_gfa_schema(),
             "KAKAO_SEARCH": kakao_search_ad_schema(),
             "KAKAO_MOMENT": kakao_moment_ad_schema(),
             "GOOGLE_ADS": google_ads_schema(),
             "GA4": ga4_schema(),
+            "META": meta_schema(),
         }
 
     async def insert_static_schema(self, data_set_name: str, reports_data: dict) -> dict:

@@ -3,9 +3,10 @@ from fastapi import APIRouter
 from models.media_request_models import TotalRequestModel, MediaRequestModel
 
 # 각 매체별 엔드포인트 함수 import
-from routers.reports.naver import create_naver_reports
+from routers.reports.naver import create_naver_reports, create_gfa_reports
 from routers.reports.kakao import create_kakao_reports, create_kakao_monent_reports
 from routers.reports.google import create_google_report, create_ga4_report
+from routers.reports.meta import create_meta_reports
 
 # 서브 라우터 포함 (매체별 엔드포인트)
 from .naver import router as naver_router
@@ -32,6 +33,10 @@ async def create_all_report(request: TotalRequestModel):
                 "model_class": MediaRequestModel,
                 "handler": create_naver_reports,
             },
+            "gfa": {
+                "model_class": MediaRequestModel,
+                "handler": create_gfa_reports,
+            },
             "kakao": {
                 "model_class": MediaRequestModel,
                 "handler": create_kakao_reports,
@@ -44,7 +49,13 @@ async def create_all_report(request: TotalRequestModel):
                 "model_class": MediaRequestModel,
                 "handler": create_google_report,
             },
-            "ga4": {"model_class": MediaRequestModel, "handler": create_ga4_report},
+            "ga4": {"model_class": MediaRequestModel, 
+                    "handler": create_ga4_report
+            },
+            "meta": {
+                "model_class": MediaRequestModel,
+                "handler": "create_meta_reports"
+            },  
         }
         result = {}
 
