@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from models.media_request_models import GFATokenRequestModel
 from auth.kakao_token_manager import KakaoTokenManager
 from auth.gfa_token_manager import GFATokenManager
+from auth.works_token_manager import WorksTokenManager
 import logging
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,21 @@ async def enroll_gfa_token(request: GFATokenRequestModel):
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content={"message": "GFA 토큰이 성공적으로 등록되었습니다"},
+        )
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    
+@router.get("/works")
+async def enroll_works_token(code: str = Query(...)):
+    """WORKS Token이 모두 만료 되면 수동으로 업데이트 진행"""
+    try:
+        token_manager = WorksTokenManager()
+        await token_manager.renewal_all_token(code)
+
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED,
+            content={"message": "WORKS 토큰이 성공적으로 등록되었습니다"},
         )
 
     except Exception as e:

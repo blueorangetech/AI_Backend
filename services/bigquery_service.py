@@ -134,3 +134,21 @@ class BigQueryReportService:
                 schema_fields.append(bigquery.SchemaField(key, data_type))
 
         return schema_fields
+
+    async def get_data_by_date(self, dataset_id: str, table_id: str, 
+                               start_date: str, end_date: str):
+        """특정 테이블의 특정 날짜 데이터를 조회"""
+        try:
+            data = await self.client.query_data_by_date(dataset_id, table_id, start_date, end_date)
+            result = []
+            
+            # 결과를 딕셔너리 리스트로 변환
+            for row in data:
+                result.append(dict(row))
+
+            logger.info(f"Retrieved {len(result)} rows from {dataset_id}.{table_id} for date {start_date} - {end_date}")
+
+            return result
+        except Exception as e:
+            logger.error(f"데이터 조회 실패: {str(e)}")
+            raise e

@@ -14,6 +14,8 @@ from .kakao import router as kakao_router
 from .google import router as google_router
 from .meta import router as meta_router
 
+from utils import mail
+
 from configs.customers_event import bo_customers
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -54,7 +56,7 @@ async def create_all_report(request: TotalRequestModel):
             },
             "meta": {
                 "model_class": MediaRequestModel,
-                "handler": "create_meta_reports"
+                "handler": create_meta_reports
             },  
         }
         result = {}
@@ -79,3 +81,12 @@ async def create_all_report(request: TotalRequestModel):
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+@router.get("/test")
+async def send_mail():
+    # 여기서 공휴일 정보 먼저 판단하고
+    response = await mail.check_holidays()
+    return response
+
+    # 휴일 다음날이면 휴일 데이터까지 가져와서 메일 보내기
+    response = await mail.send_mail(bo_customers)

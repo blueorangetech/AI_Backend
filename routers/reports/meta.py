@@ -25,7 +25,7 @@ async def create_meta_reports(request: MediaRequestModel):
 
         fields = customer_info["fields"]
         response = await service.create_reports(fields)
-        logger.info(response)
+        
         # BigQuery 연결
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
@@ -33,7 +33,6 @@ async def create_meta_reports(request: MediaRequestModel):
         result = await bigquery_service.insert_daynamic_schema(data_set_name, response)
 
         return result
-        return response
     
     except Exception as e:
         return {"status": "error", "message": str(e)}

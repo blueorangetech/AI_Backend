@@ -32,7 +32,6 @@ app.add_middleware(
 app.include_router(reports.router)
 app.include_router(token.router)
 
-
 @app.get("/")
 async def hello():
     return "Welcome to BlueOrange Service !"

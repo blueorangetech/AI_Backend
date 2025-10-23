@@ -1,5 +1,6 @@
 from database.mongodb import MongoDB
 from utils.http_client_manager import get_http_client
+from datetime import datetime
 import os, jwt, logging
 
 logger = logging.getLogger(__name__)
@@ -141,7 +142,11 @@ class KakaoTokenManager:
 
                 db = await self._get_db()
                 db.get_collection("token").update_one(
-                    {"media": "kakao"}, {"$set": {"token": encode_new_token}}
+                    {"media": "kakao"}, {"$set": {
+                        "token": encode_new_token,
+                        "updated_at": datetime.now()
+                        }
+                    }
                 )
                 logging.info("토큰이 갱신되었습니다.")
                 return new_token["access_token"]

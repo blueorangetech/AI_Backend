@@ -4,7 +4,6 @@ import asyncio, logging, time
 
 logger = logging.getLogger(__name__)
 
-
 class KakaoReportService:
     def __init__(self, token, account_id):
         self.client = KakaoAPIClient(token, account_id)
