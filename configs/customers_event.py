@@ -70,4 +70,46 @@ bo_customers = {
                       }
         },
     },
+    "baemin_restaurant":{
+        "data_set_name": "baemin_restaurant",
+        "media_list": {
+            "naver": {"customer_id": "1821082",
+                      "master_list" : ["Campaign", "Adgroup", "Keyword"],
+                      "stat_types": ["AD"],
+                      },
+            "kakao_moment":{
+                "account_id": "620017"
+            },
+            "gfa": {
+                "customer_id": "66953"
+            },
+            "google_ads": {
+                "customer_id": "7107846694",
+                "fields": [
+                    "segments.date",
+                    "campaign.name",
+                    "ad_group.name",
+                    "ad_group_ad.ad.final_urls",
+                    "metrics.impressions",
+                    "metrics.video_views",
+                    "metrics.clicks",
+                    "metrics.cost_micros",
+                    "metrics.conversions",
+                ],
+                "view_level": "From ad_group_ad",
+            },
+            "meta": {
+                "account_id":"1223120648245224",
+                "fields": [
+                    "date_start",
+                    "campaign_name",
+                    "adset_name",
+                    "ad_name",
+                    "impressions",
+                    "clicks",
+                    "spend",
+                ]
+            }
+        }
+    }
 }

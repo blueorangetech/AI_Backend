@@ -1,11 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, reports, ai_tools
+from routers import reports, token
+from utils.http_client_manager import cleanup_http_client
+from utils.bigquery_client_manager import cleanup_all_bigquery_clients
+from database.mongodb import MongoDB
 import logging
+from contextlib import asynccontextmanager
 
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 애플리케이션 시작 시
+    yield
+    # 애플리케이션 종료 시 리소스 정리
+    await cleanup_http_client()
+    await cleanup_all_bigquery_clients()
+    await MongoDB.close()
+
+app = FastAPI(lifespan=lifespan)
 
 origins = ["*"]
 app.add_middleware(
@@ -16,10 +29,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
 app.include_router(reports.router)
-app.include_router(ai_tools.router)
-
+app.include_router(token.router)
 
 @app.get("/")
 async def hello():

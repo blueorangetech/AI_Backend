@@ -8,9 +8,6 @@ class TotalRequestModel(BaseModel):
 class MediaRequestModel(BaseModel):
     customer: str
 
-
-class MetaAdsRequestModel(BaseModel):
-    account_id: str
-    table_name: str
-    start_date: str | None = None
-    end_date: str | None = None
+class GFATokenRequestModel(BaseModel):
+    code : str
+    state : str

@@ -1,6 +1,6 @@
 from google.cloud import bigquery
-from google.oauth2 import service_account
-import logging, time, io, json
+from utils.bigquery_client_manager import get_bigquery_client
+import logging, time, io
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -8,32 +8,37 @@ logger = logging.getLogger(__name__)
 
 class BigQueryClient:
     def __init__(self, config):
-        self.credentials = service_account.Credentials.from_service_account_info(config)
-        self.client = bigquery.Client(
-            credentials=self.credentials, project=self.credentials.project_id
-        )
-        self.project_id = self.credentials.project_id
+        self.config = config
+        self._client = None
 
-    def create_dataset(self, dataset_id, location="US"):
-        dataset_ref = self.client.dataset(dataset_id)
+    async def _get_client(self):
+        """BigQuery 클라이언트 반환 (매니저를 통해)"""
+        if self._client is None:
+            self._client = await get_bigquery_client(self.config)
+        return self._client
+
+    async def create_dataset(self, dataset_id, location="US"):
+        client = await self._get_client()
+        dataset_ref = client.dataset(dataset_id)
         dataset = bigquery.Dataset(dataset_ref)
         dataset.location = location
 
         try:
-            dataset = self.client.create_dataset(dataset, timeout=30)
-            logger.info(f"Created dataset {self.project_id}.{dataset_id}")
+            dataset = client.create_dataset(dataset, timeout=30)
+            logger.info(f"Created dataset {client.project}.{dataset_id}")
             return dataset
 
         except Exception as e:
             if "Already Exists" in str(e):
                 logger.info(f"Dataset {dataset_id} already exists")
-                return self.client.get_dataset(dataset_ref)
+                return client.get_dataset(dataset_ref)
             else:
                 raise e
 
-    def list_datasets(self):
+    async def list_datasets(self):
         try:
-            datasets = list(self.client.list_datasets())
+            client = await self._get_client()
+            datasets = list(client.list_datasets())
 
             dataset_info = []
             for dataset in datasets:
@@ -45,35 +50,63 @@ class BigQueryClient:
             logger.error(f"Failed to list datasets: {e}")
             return []
 
-    def _create_table(self, dataset_id, table_id, schema):
-        table_ref = self.client.dataset(dataset_id).table(table_id)
+    async def _create_table(self, dataset_id, table_id, schema):
+        client = await self._get_client()
+        table_ref = client.dataset(dataset_id).table(table_id)
         table = bigquery.Table(table_ref, schema=schema)
 
         try:
-            table = self.client.create_table(table)
+            table = client.create_table(table)
             logger.info(f"Created table {dataset_id}.{table_id}")
             return table
 
         except Exception as e:
             if "Already Exists" in str(e):
                 logger.info(f"Table {dataset_id}.{table_id} already exists")
-                return self.client.get_table(table_ref)
+                return client.get_table(table_ref)
             else:
                 raise e
 
-    def _table_exists(self, dataset_id, table_id):
+    async def _table_exists(self, dataset_id, table_id):
         """테이블 존재 여부 확인"""
         try:
-            table_ref = self.client.dataset(dataset_id).table(table_id)
-            self.client.get_table(table_ref)
+            client = await self._get_client()
+            table_ref = client.dataset(dataset_id).table(table_id)
+            client.get_table(table_ref)
             return True
 
         except Exception:
             return False
 
-    def list_tables_in_dataset(self, dataset_id):
+    async def check_date_exists(self, dataset_id, table_id, insert_date):
+        """특정 날짜의 데이터가 이미 존재하는지 확인"""
+        if not await self._table_exists(dataset_id, table_id):
+            return False
+
         try:
-            tables = list(self.client.list_tables(dataset_id))
+            client = await self._get_client()
+            query = f"""
+            SELECT COUNT(*) as count
+            FROM `{client.project}.{dataset_id}.{table_id}`
+            WHERE date = DATE('{insert_date}')
+            """
+
+            query_job = client.query(query)
+            results = query_job.result()
+
+            for row in results:
+                return row.count > 0
+
+        except Exception as e:
+            logger.warning(f"Failed to check date existence: {str(e)}")
+            return False
+
+        return False
+
+    async def list_tables_in_dataset(self, dataset_id):
+        try:
+            client = await self._get_client()
+            tables = list(client.list_tables(dataset_id))
             table_info = []
             for table in tables:
                 logger.info(dir(table))
@@ -114,7 +147,7 @@ class BigQueryClient:
                 )
         return total_error_summary
 
-    def _insert_rows(self, table_id, rows, batch_size=50000):
+    async def _insert_rows(self, table_id, rows, batch_size=50000):
         """
         BigQuery에 배치 로드 방식으로 대량 데이터 삽입
 
@@ -126,7 +159,8 @@ class BigQueryClient:
         Returns:
             bool: 전체 삽입 성공 여부
         """
-        table_ref = self.client.get_table(table_id)
+        client = await self._get_client()
+        table_ref = client.get_table(table_id)
         total_rows = len(rows)
 
         if total_rows == 0:
@@ -165,7 +199,7 @@ class BigQueryClient:
                 )
                 
                 # 로드 작업 실행
-                job = self.client.load_table_from_file(
+                job = client.load_table_from_file(
                     file_obj, table_ref, job_config=job_config
                 )
                 
@@ -198,17 +232,18 @@ class BigQueryClient:
             logger.info(f"All {total_rows} rows successfully loaded into {table_id}")
             return True
 
-    def insert_start(self, dataset_id, table_id, schema, rows):
-        table_address = f"{self.project_id}.{dataset_id}.{table_id}"
+    async def insert_start(self, dataset_id, table_id, schema, rows):
+        client = await self._get_client()
+        table_address = f"{client.project}.{dataset_id}.{table_id}"
 
-        if not self._table_exists(dataset_id, table_id):
-            self._create_table(dataset_id, table_id, schema)
+        if not await self._table_exists(dataset_id, table_id):
+            await self._create_table(dataset_id, table_id, schema)
 
         for interval in range(100):
-            if self._table_exists(dataset_id, table_id):
+            if await self._table_exists(dataset_id, table_id):
                 time.sleep(5)
                 try:
-                    success = self._insert_rows(table_address, rows)
+                    success = await self._insert_rows(table_address, rows)
                     if success:
                         return {
                             "status": "success",
@@ -220,3 +255,21 @@ class BigQueryClient:
             time.sleep(0.3)
 
         return {"status": "error", "message": "Table creation timeout after 30 seconds"}
+
+    async def query_data_by_date(self, dataset_id, table_id, start_date, end_date):
+        """특정 테이블의 특정 날짜 데이터를 조회"""
+        try:
+            client = await self._get_client()
+            query = f"""
+            SELECT *
+            FROM `{client.project}.{dataset_id}.{table_id}`
+            WHERE date BETWEEN DATE('{start_date}') AND DATE('{end_date}')
+            """
+            query_job = client.query(query)
+            results = query_job.result()
+            
+            return results
+
+        except Exception as e:
+            logger.error(f"Failed to query data: {str(e)}")
+            raise Exception(f"BigQuery 데이터 조회 실패: {str(e)}")

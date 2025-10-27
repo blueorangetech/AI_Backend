@@ -1,6 +1,7 @@
 import hashlib, time, hmac, base64
 import httpx
 from datetime import datetime, timedelta
+from utils.http_client_manager import get_http_client
 
 
 class NaverAPIClient:
@@ -10,7 +11,6 @@ class NaverAPIClient:
         self.api_key = api_key
         self.secret_key = secret_key
         self.customer_id = customer_id
-        self.client = httpx.AsyncClient()
 
     def _generate_signature(self, timestamp, method, uri):
         """서명 생성"""
@@ -39,18 +39,19 @@ class NaverAPIClient:
     async def _make_request(self, method, uri, data=None, download_url=None):
         """API 요청 실행"""
         headers = self._create_headers(method, uri)
+        client = await get_http_client()
 
         # 다운로드 URL은 baseURL + URI 조합이 아님
         url = download_url if download_url is not None else self.base_url + uri
 
         if method.upper() == "POST":
-            response = await self.client.post(url, headers=headers, json=data)
+            response = await client.post(url, headers=headers, json=data)
 
         elif method.upper() == "GET":
-            response = await self.client.get(url, headers=headers)
+            response = await client.get(url, headers=headers)
 
         elif method.upper() == "DELETE":
-            response = await self.client.delete(url, headers=headers)
+            response = await client.delete(url, headers=headers)
 
         else:
             raise ValueError(f"지원하시 않는 요청입니다 : {method}")

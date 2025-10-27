@@ -4,10 +4,12 @@ from models.bigquery_schemas import (
     naver_search_ad_cov_schema,
     naver_shopping_ad_schema,
     naver_shopping_ad_cov_schema,
+    naver_gfa_schema,
     kakao_search_ad_schema,
     kakao_moment_ad_schema,
     google_ads_schema,
     ga4_schema,
+    meta_schema,
 )
 import logging
 
@@ -24,28 +26,38 @@ class BigQueryReportService:
             "NAVER_AD_CONVERSION": naver_search_ad_cov_schema(),
             "NAVER_SHOPPINGKEYWORD_DETAIL" :naver_shopping_ad_schema(),
             "NAVER_SHOPPINGKEYWORD_CONVERSION_DETAIL": naver_shopping_ad_cov_schema(),
-            "kakao_search_ad": kakao_search_ad_schema(),
-            "kakao_moment_ad": kakao_moment_ad_schema(),
+            "NAVER_GFA": naver_gfa_schema(),
+            "KAKAO_SEARCH": kakao_search_ad_schema(),
+            "KAKAO_MOMENT": kakao_moment_ad_schema(),
             "GOOGLE_ADS": google_ads_schema(),
             "GA4": ga4_schema(),
+            "META": meta_schema(),
         }
 
-    def insert_static_schema(self, data_set_name: str, reports_data: dict) -> dict:
+    async def insert_static_schema(self, data_set_name: str, reports_data: dict) -> dict:
         """정적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
 
-        self.client.create_dataset(data_set_name)
+        await self.client.create_dataset(data_set_name)
 
         for table_name, data in reports_data.items():
             result[table_name] = False
 
             if data:  # 데이터가 있으면
                 try:
+                    # 날짜 중복 체크
+                    insert_date = data[0]['segments_date'] if table_name == "GOOGLE_ADS" else data[0]['date']
+
+                    if await self.client.check_date_exists(data_set_name, table_name, insert_date):
+                        logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
+                        result[table_name] = "skipped_duplicate_date"
+                        continue
+
                     schema = self.config.get(table_name, [])
                     if len(schema) == 0:
                         raise Exception(f"정의된 BigQuery 스키마가 없습니다")
 
-                    self.client.insert_start(data_set_name, table_name, schema, data)
+                    await self.client.insert_start(data_set_name, table_name, schema, data)
                     result[table_name] = True
                     logger.info(f"{table_name} 데이터 BigQuery 삽입 완료")
 
@@ -57,11 +69,11 @@ class BigQueryReportService:
 
         return result
 
-    def insert_daynamic_schema(self, data_set_name: str, reports_data: dict) -> dict:
+    async def insert_daynamic_schema(self, data_set_name: str, reports_data: dict) -> dict:
         """동적 스키마를 가진 데이터를 BigQuery에 삽입"""
         result = {}
 
-        self.client.create_dataset(data_set_name)
+        await self.client.create_dataset(data_set_name)
 
         for table_name, data in reports_data.items():
 
@@ -73,10 +85,18 @@ class BigQueryReportService:
 
             if data:  # 데이터가 있으면
                 try:
+                    # 날짜 중복 체크
+                    insert_date = data[0]['segments_date'] if table_name == "GOOGLE_ADS" else data[0]['date']
+
+                    if await self.client.check_date_exists(data_set_name, table_name, insert_date):
+                        logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
+                        result[table_name] = "skipped_duplicate_date"
+                        continue
+
                     if len(schema) == 0:
                         raise Exception(f"생성된 BigQuery 스키마가 없습니다")
 
-                    self.client.insert_start(data_set_name, table_name, schema, data)
+                    await self.client.insert_start(data_set_name, table_name, schema, data)
                     result[table_name] = True
                     logger.info(f"{table_name} 데이터 BigQuery 삽입 완료")
 
@@ -114,3 +134,21 @@ class BigQueryReportService:
                 schema_fields.append(bigquery.SchemaField(key, data_type))
 
         return schema_fields
+
+    async def get_data_by_date(self, dataset_id: str, table_id: str, 
+                               start_date: str, end_date: str):
+        """특정 테이블의 특정 날짜 데이터를 조회"""
+        try:
+            data = await self.client.query_data_by_date(dataset_id, table_id, start_date, end_date)
+            result = []
+            
+            # 결과를 딕셔너리 리스트로 변환
+            for row in data:
+                result.append(dict(row))
+
+            logger.info(f"Retrieved {len(result)} rows from {dataset_id}.{table_id} for date {start_date} - {end_date}")
+
+            return result
+        except Exception as e:
+            logger.error(f"데이터 조회 실패: {str(e)}")
+            raise e
