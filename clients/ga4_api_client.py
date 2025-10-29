@@ -79,10 +79,10 @@ class GA4APIClient:
         properties = []
         for property in response:
             logger.info(property)
-            # properties.append({
-            #     "property_id": property.property_id,
-            #     "display_name": property.display_name
-            #     }
-            # )
+            properties.append({
+                "account_id": property.name,
+                "display_name": property.display_name
+                }
+            )
 
         return properties

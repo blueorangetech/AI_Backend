@@ -61,3 +61,22 @@ async def create_kakao_monent_reports(request: MediaRequestModel):
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+
+@router.post("/test")
+async def test(request: MediaRequestModel):
+    """카카오 모먼트 광고 성과 다운로드"""
+    try:
+        customer = request.customer
+        account_id = bo_customers[customer]["media_list"]["kakao_moment"]["account_id"]
+
+        token_manager = KakaoTokenManager()
+        valid_token = await token_manager.get_vaild_token()
+
+        service = KakaoReportService(valid_token, account_id)
+        response = await service.test_api()
+
+        return response
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

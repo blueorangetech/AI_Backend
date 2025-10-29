@@ -119,3 +119,11 @@ class KakaoAPIClient:
 
         response = await self._make_request("GET", url + params)
         return response["data"]
+    
+    async def test(self):
+        url = "https://apis.moment.kakao.com/openapi/v4/creatives/report"
+        params = f"?datePreset=TODAY&dimension=CREATIVE_FORMAT&metricsGroup=BASIC"
+
+        response = await self._make_request("GET", url + params)
+        return response["data"]
+        

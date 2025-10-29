@@ -72,3 +72,14 @@ async def create_ga4_report(request: MediaRequestModel):
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@router.get("/ga4/list")
+async def get_ga4_list():
+    try:
+        client = get_ga4_client(None)
+        service = GA4ReportServices(client)
+        response = service.properties_list()
+        return response
+    
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

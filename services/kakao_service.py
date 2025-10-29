@@ -177,3 +177,7 @@ class KakaoReportService:
 
         report_data = pd.DataFrame.from_dict(result, orient="index")
         return report_data
+
+    async def test_api(self):
+        chunk_response = await self.client.test()
+        return chunk_response
