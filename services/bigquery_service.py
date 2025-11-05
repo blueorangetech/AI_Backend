@@ -45,10 +45,11 @@ class BigQueryReportService:
 
             if data:  # 데이터가 있으면
                 try:
-                    # 날짜 중복 체크
-                    insert_date = data[0]['segments_date'] if table_name == "GOOGLE_ADS" else data[0]['date']
+                    # 날짜 필드명 결정
+                    date_field = 'segments_date' if "GOOGLE_ADS" in table_name else 'date'
+                    insert_date = data[0][date_field]
 
-                    if await self.client.check_date_exists(data_set_name, table_name, insert_date):
+                    if await self.client.check_date_exists(data_set_name, table_name, insert_date, date_field):
                         logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
                         result[table_name] = "skipped_duplicate_date"
                         continue
@@ -77,7 +78,14 @@ class BigQueryReportService:
 
         for table_name, data in reports_data.items():
 
-            schema_name = "GA4" if table_name.startswith("GA4") else table_name
+            # 테이블명에서 스키마명 추출 (prefix 기반)
+            if table_name.startswith("GA4"):
+                schema_name = "GA4"
+            elif table_name.startswith("GOOGLE_ADS"):
+                schema_name = "GOOGLE_ADS"
+            else:
+                schema_name = table_name
+
             basic_schema = self.config[schema_name]
 
             schema = self._create_schema(basic_schema, data)
@@ -85,13 +93,26 @@ class BigQueryReportService:
 
             if data:  # 데이터가 있으면
                 try:
-                    # 날짜 중복 체크
-                    insert_date = data[0]['segments_date'] if table_name == "GOOGLE_ADS" else data[0]['date']
+                    # 날짜 필드명 결정
+                    date_field = 'segments_date' if "GOOGLE_ADS" in table_name else 'date'
 
-                    if await self.client.check_date_exists(data_set_name, table_name, insert_date):
-                        logger.warning(f"{table_name}: 해당 날짜({insert_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
-                        result[table_name] = "skipped_duplicate_date"
-                        continue
+                    # GA4 테이블인 경우: 날짜 범위로 삭제 후 삽입
+                    if table_name.startswith("GA4"):
+                        # 모든 날짜 추출 (리스트)
+                        all_dates = [row[date_field] for row in data if date_field in row]
+                        if all_dates:
+                            start_date = min(all_dates)
+                            end_date = max(all_dates)
+                            logger.info(f"{table_name}: 날짜 범위 {start_date} ~ {end_date} 데이터 삭제 후 재삽입합니다.")
+                            await self.client.delete_data_by_date_range(data_set_name, table_name, start_date, end_date)
+
+                    # 다른 테이블인 경우: 날짜 중복 체크 (첫 번째 날짜만 확인)
+                    else:
+                        first_date = data[0][date_field]
+                        if await self.client.check_date_exists(data_set_name, table_name, first_date, date_field):
+                            logger.warning(f"{table_name}: 해당 날짜({first_date})의 데이터가 이미 존재합니다. 삽입을 취소합니다.")
+                            result[table_name] = "skipped_duplicate_date"
+                            continue
 
                     if len(schema) == 0:
                         raise Exception(f"생성된 BigQuery 스키마가 없습니다")

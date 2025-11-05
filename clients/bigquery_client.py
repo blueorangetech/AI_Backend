@@ -78,7 +78,7 @@ class BigQueryClient:
         except Exception:
             return False
 
-    async def check_date_exists(self, dataset_id, table_id, insert_date):
+    async def check_date_exists(self, dataset_id, table_id, insert_date, date_field="date"):
         """특정 날짜의 데이터가 이미 존재하는지 확인"""
         if not await self._table_exists(dataset_id, table_id):
             return False
@@ -88,7 +88,7 @@ class BigQueryClient:
             query = f"""
             SELECT COUNT(*) as count
             FROM `{client.project}.{dataset_id}.{table_id}`
-            WHERE date = DATE('{insert_date}')
+            WHERE {date_field} = DATE('{insert_date}')
             """
 
             query_job = client.query(query)
@@ -102,6 +102,54 @@ class BigQueryClient:
             return False
 
         return False
+
+    async def delete_data_by_date(self, dataset_id, table_id, delete_date):
+        """특정 날짜의 데이터를 삭제"""
+        if not await self._table_exists(dataset_id, table_id):
+            logger.info(f"Table {dataset_id}.{table_id} does not exist, skip deletion")
+            return True
+
+        try:
+            client = await self._get_client()
+            query = f"""
+            DELETE FROM `{client.project}.{dataset_id}.{table_id}`
+            WHERE date = DATE('{delete_date}')
+            """
+
+            logger.info(f"Deleting data for date {delete_date} from {dataset_id}.{table_id}")
+            query_job = client.query(query)
+            query_job.result()  # 쿼리 완료 대기
+
+            logger.info(f"Successfully deleted data for date {delete_date}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete data for date {delete_date}: {str(e)}")
+            raise Exception(f"BigQuery 데이터 삭제 실패: {str(e)}")
+
+    async def delete_data_by_date_range(self, dataset_id, table_id, start_date, end_date):
+        """날짜 범위의 데이터를 삭제"""
+        if not await self._table_exists(dataset_id, table_id):
+            logger.info(f"Table {dataset_id}.{table_id} does not exist, skip deletion")
+            return True
+
+        try:
+            client = await self._get_client()
+            query = f"""
+            DELETE FROM `{client.project}.{dataset_id}.{table_id}`
+            WHERE date >= DATE('{start_date}') AND date <= DATE('{end_date}')
+            """
+
+            logger.info(f"Deleting data from {start_date} to {end_date} from {dataset_id}.{table_id}")
+            query_job = client.query(query)
+            query_job.result()  # 쿼리 완료 대기
+
+            logger.info(f"Successfully deleted data from {start_date} to {end_date}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete data for date range {start_date} - {end_date}: {str(e)}")
+            raise Exception(f"BigQuery 날짜 범위 데이터 삭제 실패: {str(e)}")
 
     async def list_tables_in_dataset(self, dataset_id):
         try:
@@ -147,17 +195,16 @@ class BigQueryClient:
                 )
         return total_error_summary
 
-    async def _insert_rows(self, table_id, rows, batch_size=50000):
+    async def _insert_rows(self, table_id, rows):
         """
-        BigQuery에 배치 로드 방식으로 대량 데이터 삽입
+        BigQuery에 로드 방식으로 데이터 삽입
 
         Args:
             table_id: 테이블 ID (project.dataset.table 형식)
             rows: 삽입할 데이터 리스트
-            batch_size: 배치 크기 (기본값: 50000)
 
         Returns:
-            bool: 전체 삽입 성공 여부
+            bool: 삽입 성공 여부
         """
         client = await self._get_client()
         table_ref = client.get_table(table_id)
@@ -167,70 +214,40 @@ class BigQueryClient:
             logger.info("No rows to insert")
             return True
 
-        logger.info(
-            f"Starting batch load: {total_rows} rows with batch size {batch_size}"
-        )
+        logger.info(f"Starting load: {total_rows} rows")
 
-        success_count = 0
-        all_errors = []
+        try:
+            # DataFrame으로 변환
+            df = pd.DataFrame(rows)
 
-        # 배치로 나누어 처리
-        for i in range(0, total_rows, batch_size):
-            batch = rows[i : i + batch_size]
-            batch_number = (i // batch_size) + 1
-            total_batches = (total_rows + batch_size - 1) // batch_size
+            # NDJSON 형식으로 변환
+            ndjson_data = df.to_json(orient='records', lines=True, date_format='iso')
 
-            try:
-                # DataFrame으로 변환
-                df = pd.DataFrame(batch)
-                
-                # NDJSON 형식으로 변환
-                ndjson_data = df.to_json(orient='records', lines=True, date_format='iso')
-                
-                # 메모리 파일 객체 생성 (bytes로 변환)
-                file_obj = io.BytesIO(ndjson_data.encode('utf-8'))
-                
-                # 배치 로드 작업 설정
-                job_config = bigquery.LoadJobConfig(
-                    source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
-                    write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-                    autodetect=False,  # 스키마 자동 감지 비활성화
-                    ignore_unknown_values=True  # 알 수 없는 필드 무시
-                )
-                
-                # 로드 작업 실행
-                job = client.load_table_from_file(
-                    file_obj, table_ref, job_config=job_config
-                )
-                
-                # 작업 완료 대기
-                job.result()
-                
-                logger.info(
-                    f"Batch {batch_number}/{total_batches}: Successfully loaded {len(batch)} rows"
-                )
-                success_count += len(batch)
+            # 메모리 파일 객체 생성 (bytes로 변환)
+            file_obj = io.BytesIO(ndjson_data.encode('utf-8'))
 
-            except Exception as e:
-                logger.error(
-                    f"Batch {batch_number}/{total_batches}: Load job failed - {str(e)}"
-                )
-                all_errors.append({"batch": batch_number, "error": str(e)})
-
-        # 최종 결과 로깅
-        logger.info(
-            f"Batch load completed: {success_count} successful out of {total_rows} total rows"
-        )
-
-        if all_errors:
-            error_count = total_rows - success_count
-            logger.error(f"Total errors: {len(all_errors)} batches failed")
-            raise Exception(
-                f"BigQuery 배치 로드 실패: {error_count}개 rows 실패, 에러 수: {len(all_errors)}"
+            # 로드 작업 설정
+            job_config = bigquery.LoadJobConfig(
+                source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+                autodetect=False,  # 스키마 자동 감지 비활성화
+                ignore_unknown_values=True  # 알 수 없는 필드 무시
             )
-        else:
-            logger.info(f"All {total_rows} rows successfully loaded into {table_id}")
+
+            # 로드 작업 실행
+            job = client.load_table_from_file(
+                file_obj, table_ref, job_config=job_config
+            )
+
+            # 작업 완료 대기
+            job.result()
+
+            logger.info(f"Successfully loaded {total_rows} rows into {table_id}")
             return True
+
+        except Exception as e:
+            logger.error(f"Load job failed - {str(e)}")
+            raise Exception(f"BigQuery 로드 실패: {str(e)}")
 
     async def insert_start(self, dataset_id, table_id, schema, rows):
         client = await self._get_client()

@@ -21,24 +21,22 @@ async def create_google_report(request: MediaRequestModel):
         data_set_name = bo_customers[customer]["data_set_name"]
 
         customer_id = customer_info["customer_id"]
-        logger.info(f"{customer} google ads id : {customer_id}")
-
-        fields = customer_info["fields"]
-        view_level = customer_info["view_level"]
-        logger.info(f"{customer} google ads fields : {fields}")
 
         client = get_google_ads_client(customer_id)
         service = GoogleAdsReportServices(client)
 
-        response = service.create_reports(fields, view_level)
-
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
 
+        navigation_reports = customer_info["fields"]
         # BigQuery로 보내기
-        result = await bigquery_service.insert_daynamic_schema(data_set_name, response)
+        results = {}
+        for report_type, data in navigation_reports.items():
+            response = service.create_reports(data, report_type)
+            result = await bigquery_service.insert_daynamic_schema(data_set_name, response)
+            results.update(result)
 
-        return result
+        return results
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -54,7 +52,6 @@ async def create_ga4_report(request: MediaRequestModel):
         property_id = customer_info["property_id"]
 
         navigation_reports = customer_info["fields"]
-
         client = get_ga4_client(property_id)
         service = GA4ReportServices(client)
         
