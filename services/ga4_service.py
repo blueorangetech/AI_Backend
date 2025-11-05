@@ -1,6 +1,8 @@
 from clients.ga4_api_client import GA4APIClient
 import pandas as pd
+import logging
 
+logger = logging.getLogger(__name__)
 
 class GA4ReportServices:
 
@@ -13,7 +15,6 @@ class GA4ReportServices:
         metrics = data.get("metric", [])
 
         response = self.client.request_create_report(defaults, customs, metrics)
-
         if customs:
             dimensions = defaults + ["eventName"]
 

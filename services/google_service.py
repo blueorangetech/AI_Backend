@@ -9,7 +9,11 @@ class GoogleAdsReportServices:
     def __init__(self, google_client: GoogleAdsAPIClient):
         self.client = google_client
 
-    def create_reports(self, fields, view_level):
+    def create_reports(self, data, report_type):
+        logger.info(data)
+        fields = data.get("fields")
+        view_level = data.get("view_level")
+
         response = self.client.create_report(fields, view_level)
 
         reports = []
@@ -21,7 +25,7 @@ class GoogleAdsReportServices:
 
             reports.append(data)
 
-        result = {"GOOGLE_ADS": reports}
+        result = {f"GOOGLE_ADS_{report_type}": reports}
         return result
 
     def _get_nested_value(self, obj, attr_path):

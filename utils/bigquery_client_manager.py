@@ -80,7 +80,7 @@ class BigQueryClientManager:
                     try:
                         cls._instances[config_key].close()
                         del cls._instances[config_key]
-                        logger.info(f"BigQuery 클라이언트가 정리되었습니다: {config_key}")
+                        logger.info(f"BigQuery 클라이언트가 정리되었습니다")
                     except Exception as e:
                         logger.warning(f"BigQuery 클라이언트 정리 중 오류: {e}")
 

@@ -1,4 +1,94 @@
 bo_customers = {
+    "imweb":{
+        "data_set_name": "imweb",
+        "media_list": {
+            "naver": {
+                "customer_id": "1079588",
+                "master_list": ["Campaign", "Adgroup", "Keyword"],
+                "stat_types": ["AD"]
+            },
+            "kakao_moment": { 
+                "account_id": "296766"
+            },
+            "gfa": {
+                "customer_id": "17427"
+            },
+            "meta": {
+                "account_id": "264857540",
+                "fields": [
+                    "date_start",
+                    "campaign_name",
+                    "adset_name",
+                    "ad_name",
+                    "impressions",
+                    "clicks",
+                    "spend",
+                ],
+            },
+            "google_ads": {
+                "customer_id": "9984343390",
+                "fields": {
+                    "total": {
+                        "fields" :[
+                            "segments.date",
+                            "campaign.name",
+                            "ad_group.name",
+                            "ad_group_ad.ad.name",
+                            "metrics.impressions",
+                            "metrics.clicks",
+                            "metrics.cost_micros",
+                            "metrics.video_views",
+                            ],
+                        "view_level": "From ad_group_ad",
+                    },
+                    "campaign":{
+                        "fields": [
+                            "segments.date",
+                            "campaign.name",
+                            "metrics.impressions",
+                            "metrics.clicks",
+                            "metrics.cost_micros",
+                            "metrics.video_views",
+                        ],
+                        "view_level": "From campaign",
+                    },
+                    "keyword": {
+                        "fields": [
+                            "segments.date",
+                            "campaign.name",
+                            "ad_group_criterion.keyword.text",
+                            "metrics.impressions",
+                            "metrics.clicks",
+                            "metrics.cost_micros",
+
+                        ],
+                        "view_level": "From keyword_view",
+                    }
+                }
+            },
+            "ga4": {
+                "property_id": "310647872",
+                "fields": {
+                    "total": {
+                        "default": [
+                            "date", "sessionCampaignName", 
+                            "sessionMedium", "sessionSource","eventName"
+                                ],
+                            "custom":[],
+                            "metric":["eventCount"],
+                        },
+                    "keyword":{
+                        "default": [
+                            "date", "sessionCampaignName",
+                            "sessionManualTerm", "eventName"
+                                ],
+                        "custom": [],
+                        "metric": ["eventCount"]
+                        }
+                    }
+            }
+        }
+    },
     "speed_mate": {
         "data_set_name": "speed_mate",
         "media_list": {
@@ -108,8 +198,8 @@ bo_customers = {
                     "impressions",
                     "clicks",
                     "spend",
-                ]
+                    ]
+                }
             }
         }
     }
-}

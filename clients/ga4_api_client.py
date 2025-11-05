@@ -21,7 +21,7 @@ class GA4APIClient:
         self.property_id = property_id
 
     def request_create_report(self, defaults, customs, metrics):
-        """GA4 탐색 보고서 생성"""
+        """GA4 탐색 보고서 생성 (페이지네이션 포함)"""
 
         # 필드명 정의
         default_dimensions = [Dimension(name=default) for default in defaults]
@@ -32,9 +32,10 @@ class GA4APIClient:
 
         request_params = {
             "property": f"properties/{self.property_id}",
-            "date_ranges": [DateRange(start_date="yesterday", end_date="yesterday")],
+            "date_ranges": [DateRange(start_date="7daysAgo", end_date="yesterday")],
             "dimensions": default_dimensions,
             "metrics": [Metric(name=metric) for metric in metrics],
+            "limit": 100000,  # 최대 limit 설정
         }
 
         # customs가 있을 때만 필터 추가
@@ -46,9 +47,42 @@ class GA4APIClient:
                 )
             )
 
-        request = RunReportRequest(**request_params)
+        # 페이지네이션을 통해 모든 데이터 수집
+        all_rows = []
+        offset = 0
+        limit = 100000
 
-        response = self.client.run_report(request)
+        while True:
+            request_params["offset"] = offset
+            request_params["limit"] = limit
+
+            request = RunReportRequest(**request_params)
+            response = self.client.run_report(request)
+
+            # 데이터가 없으면 종료
+            if not response.rows:
+                break
+
+            # 수집된 rows 추가
+            all_rows.extend(response.rows)
+            rows_count = len(response.rows)
+
+            logger.info(f"Fetched {rows_count} rows (offset: {offset}, total: {len(all_rows)})")
+
+            # 반환된 row 개수가 limit보다 작으면 마지막 페이지
+            if rows_count < limit:
+                break
+
+            offset += limit
+
+        logger.info(f"Total rows fetched: {len(all_rows)}")
+
+        # 마지막 response의 rows를 전체 수집된 rows로 교체
+        if all_rows:
+            # protobuf repeated field 클리어 후 재추가
+            del response.rows[:]
+            response.rows.extend(all_rows)
+
         return response
 
     def check_events(self):
@@ -79,10 +113,10 @@ class GA4APIClient:
         properties = []
         for property in response:
             logger.info(property)
-            # properties.append({
-            #     "property_id": property.property_id,
-            #     "display_name": property.display_name
-            #     }
-            # )
+            properties.append({
+                "account_id": property.name,
+                "display_name": property.display_name
+                }
+            )
 
         return properties
