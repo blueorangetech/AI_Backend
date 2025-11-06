@@ -80,3 +80,18 @@ async def get_ga4_list():
     
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+@router.post("/ga4/metadata")
+async def get_ga4_events(request: MediaRequestModel):
+    try:
+        customer = request.customer
+        customer_info = bo_customers[customer]["media_list"]["ga4"]
+        property_id = customer_info["property_id"]
+        client = get_ga4_client(property_id)
+        service = GA4ReportServices(client)
+
+        response = service.get_metadata()
+        return response
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

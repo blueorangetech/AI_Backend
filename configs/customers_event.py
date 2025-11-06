@@ -72,7 +72,8 @@ bo_customers = {
                     "total": {
                         "default": [
                             "date", "sessionCampaignName", 
-                            "sessionMedium", "sessionSource","eventName"
+                            "sessionMedium", "sessionSource", "customEvent:site_url",
+                            "customUser:user_id_dimension", "customEvent:site_code", "eventName"
                                 ],
                             "custom":[],
                             "metric":["eventCount"],
@@ -80,7 +81,8 @@ bo_customers = {
                     "keyword":{
                         "default": [
                             "date", "sessionCampaignName",
-                            "sessionManualTerm", "eventName"
+                            "sessionManualTerm", "customEvent:site_url",
+                            "customUser:user_id_dimension", "customEvent:site_code", "eventName"
                                 ],
                         "custom": [],
                         "metric": ["eventCount"]

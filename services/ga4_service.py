@@ -40,11 +40,11 @@ class GA4ReportServices:
         results = {f"GA4_{report_type}": data}
         return results
 
-    def check_events(self):
-        self.client.check_events()
-
-        return
-
     def properties_list(self):
         property_list = self.client.properties_list()
         return property_list
+
+    def get_metadata(self):
+        """사용가능한 차원과 측정항목 조회"""
+        metadata = self.client.get_metadata()
+        return metadata

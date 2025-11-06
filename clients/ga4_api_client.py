@@ -85,28 +85,6 @@ class GA4APIClient:
 
         return response
 
-    def check_events(self):
-        request = RunReportRequest(
-            property=f"properties/{self.property_id}",
-            dimensions=[
-                Dimension(name="eventName"),
-            ],
-            metrics=[
-                Metric(name="eventCount"),  # 이벤트 발생 횟수
-            ],
-            date_ranges=[{"start_date": "30daysAgo", "end_date": "today"}],  # 최근 30일
-        )
-
-        response = self.client.run_report(request=request)
-        event_names = []
-        for row in response.rows:
-            event_name = row.dimension_values[0].value
-            event_count = row.metric_values[0].value
-            event_names.append({"event_name": event_name, "count": int(event_count)})
-            print(f"이벤트명: {event_name}, 발생횟수: {event_count}")
-
-        return event_names
-
     def properties_list(self):
         response = self.admin.list_accounts()
 
@@ -120,3 +98,40 @@ class GA4APIClient:
             )
 
         return properties
+
+    def get_metadata(self):
+        """GA4 속성의 사용가능한 차원과 측정항목 조회"""
+        from google.analytics.data_v1beta.types import GetMetadataRequest
+
+        request = GetMetadataRequest(
+            name=f"properties/{self.property_id}/metadata"
+        )
+
+        response = self.client.get_metadata(request)
+
+        # 차원(Dimensions) 정리
+        dimensions = []
+        for dimension in response.dimensions:
+            dimensions.append({
+                "api_name": dimension.api_name,
+                "ui_name": dimension.ui_name,
+                "description": dimension.description,
+                "custom_definition": dimension.custom_definition,
+                "category": dimension.category
+            })
+
+        # 측정항목(Metrics) 정리
+        metrics = []
+        for metric in response.metrics:
+            metrics.append({
+                "api_name": metric.api_name,
+                "ui_name": metric.ui_name,
+                "description": metric.description,
+                "custom_definition": metric.custom_definition,
+                "category": metric.category
+            })
+
+        return {
+            "dimensions": dimensions,
+            "metrics": metrics
+        }
