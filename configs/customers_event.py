@@ -97,17 +97,21 @@ bo_customers = {
                       "stat_types": ["AD", "AD_CONVERSION"]},
             "google_ads": {
                 "customer_id": "8272761282",
-                "fields": [
-                    "segments.date",
-                    "segments.device",
-                    "ad_group_ad.ad.type",
-                    "campaign.name",
-                    "ad_group.name",
-                    "metrics.impressions",
-                    "metrics.clicks",
-                    "metrics.cost_micros",
-                ],
-                "view_level": "From ad_group_ad",
+                "fields":{
+                    "total": {
+                        "fields": [
+                            "segments.date",
+                            "segments.device",
+                            "ad_group_ad.ad.type",
+                            "campaign.name",
+                            "ad_group.name",
+                            "metrics.impressions",
+                            "metrics.clicks",
+                            "metrics.cost_micros",
+                        ],
+                        "view_level": "From ad_group_ad",
+                    }
+                },
             },
             "ga4": {
                 "property_id": "376866221",
