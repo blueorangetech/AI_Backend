@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import reports, token
+from routers import reports, token, csv_upload
 from utils.http_client_manager import cleanup_http_client
 from utils.bigquery_client_manager import cleanup_all_bigquery_clients
 from database.mongodb import MongoDB
@@ -31,6 +31,7 @@ app.add_middleware(
 
 app.include_router(reports.router)
 app.include_router(token.router)
+app.include_router(csv_upload.router)
 
 @app.get("/")
 async def hello():

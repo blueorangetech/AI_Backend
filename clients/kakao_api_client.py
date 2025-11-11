@@ -115,7 +115,7 @@ class KakaoAPIClient:
 
     async def get_moment_report(self, creatives):
         url = "https://apis.moment.kakao.com/openapi/v4/creatives/report"
-        params = f"?datePreset=TODAY&dimension=CREATIVE_FORMAT&metricsGroup=BASIC&creativeId={creatives}"
+        params = f"?datePreset=YESTERDAY&dimension=CREATIVE_FORMAT&metricsGroup=BASIC&creativeId={creatives}"
 
         response = await self._make_request("GET", url + params)
         return response["data"]

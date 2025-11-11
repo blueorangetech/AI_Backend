@@ -151,6 +151,29 @@ class BigQueryClient:
             logger.error(f"Failed to delete data for date range {start_date} - {end_date}: {str(e)}")
             raise Exception(f"BigQuery 날짜 범위 데이터 삭제 실패: {str(e)}")
 
+    async def truncate_table(self, dataset_id, table_id):
+        """테이블의 모든 데이터를 삭제 (TRUNCATE)"""
+        if not await self._table_exists(dataset_id, table_id):
+            logger.info(f"Table {dataset_id}.{table_id} does not exist, skip truncate")
+            return True
+
+        try:
+            client = await self._get_client()
+            query = f"""
+            TRUNCATE TABLE `{client.project}.{dataset_id}.{table_id}`
+            """
+
+            logger.info(f"Truncating table {dataset_id}.{table_id}")
+            query_job = client.query(query)
+            query_job.result()  # 쿼리 완료 대기
+
+            logger.info(f"Successfully truncated table {dataset_id}.{table_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to truncate table {dataset_id}.{table_id}: {str(e)}")
+            raise Exception(f"BigQuery 테이블 truncate 실패: {str(e)}")
+
     async def list_tables_in_dataset(self, dataset_id):
         try:
             client = await self._get_client()
