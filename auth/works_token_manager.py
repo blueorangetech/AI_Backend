@@ -57,7 +57,7 @@ class WorksTokenManager:
         """Access Token 갱신"""
         client = await get_http_client()
 
-        refresh_url = " https://auth.worksmobile.com/oauth2/v2.0/token"
+        refresh_url = "https://auth.worksmobile.com/oauth2/v2.0/token"
         params = {
             "refresh_token": refresh_token,
             "grant_type": "refresh_token",

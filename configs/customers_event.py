@@ -88,6 +88,12 @@ bo_customers = {
                         "metric": ["eventCount"]
                         }
                     }
+            },
+            "criteo": {
+                "mailfolder": "121",
+                "report_name": "imweb_report",
+                "field_names": ["date", "campaign", "campaignId", "groupName", "groupId", 
+                                "adName", "imp", "click", "cost"]
             }
         }
     },

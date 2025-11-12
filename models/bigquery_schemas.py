@@ -204,3 +204,18 @@ def imweb_inner_data_schema():
         bigquery.SchemaField("site_payment_lead_time", "FLOAT"),
         bigquery.SchemaField("first_payment_operation_type", "STRING"),
     ]
+
+def criteo_schema():
+    """CRITEO BigQuery 테이블 스키마"""
+    FIELD_TYPE_MAP = {
+        "date": "DATE",
+        "campaign": "STRING",
+        "campaignId": "FLOAT",
+        "groupName": "STRING",
+        "groupId": "FLOAT",
+        "adName": "STRING",
+        "imp": "FLOAT",
+        "click": "FLOAT",
+        "cost": "FLOAT",
+    } 
+    return FIELD_TYPE_MAP
