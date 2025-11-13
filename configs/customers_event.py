@@ -89,6 +89,9 @@ bo_customers = {
                         }
                     }
             },
+            "tiktok":{
+                "account_id": "7311146119936000001"
+            },
             "criteo": {
                 "mailfolder": "121",
                 "report_name": "imweb_report",

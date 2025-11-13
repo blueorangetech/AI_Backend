@@ -1,7 +1,6 @@
 from utils.http_client_manager import get_http_client
-from typing import Dict, Any, List
+from typing import Dict, Any
 import logging, asyncio
-import os
 
 logger = logging.getLogger(__name__)
 

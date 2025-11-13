@@ -1,6 +1,7 @@
 from clients.google_ads_api_client import GoogleAdsAPIClient
 from clients.ga4_api_client import GA4APIClient
 from clients.bigquery_client import BigQueryClient
+from clients.gcs_client import GCSClient
 import os, logging, requests
 
 logger = logging.getLogger(__name__)
@@ -58,3 +59,9 @@ def get_ga4_client(property_id):
 def get_bigquery_client():
     config = _get_gcp_config()
     return BigQueryClient(config)
+
+
+def get_gcs_client(bucket_name):
+    """GCS 클라이언트 생성"""
+    config = _get_gcp_config()
+    return GCSClient(config, bucket_name)
