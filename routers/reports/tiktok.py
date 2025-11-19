@@ -12,18 +12,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/tiktok", tags=["reports"])
 
 @router.post("/")
-async def create_meta_reports(request: MediaRequestModel):
+async def create_tiktok_reports(request: MediaRequestModel):
     try:
         customer = request.customer
         customer_info = bo_customers[customer]["media_list"]["tiktok"]
         data_set_name = bo_customers[customer]["data_set_name"]
 
         account_id = customer_info["account_id"]
+        dimensions = customer_info["dimensions"]
+        metrics = customer_info["metrics"]
 
         client = TikTokAPIClient(account_id)
         service = TikTokReportService(client)
 
-        response ={}
+        response = await service.create_report(dimensions, metrics)
+        
         # BigQuery 연결
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)

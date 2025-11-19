@@ -11,6 +11,7 @@ from models.bigquery_schemas import (
     ga4_schema,
     meta_schema,
     criteo_schema,
+    tiktok_schema,
 )
 import logging
 
@@ -33,7 +34,8 @@ class BigQueryReportService:
             "GOOGLE_ADS": google_ads_schema(),
             "GA4": ga4_schema(),
             "META": meta_schema(),
-            "CRITEO": criteo_schema()
+            "CRITEO": criteo_schema(),
+            "TIKTOK": tiktok_schema(),
         }
 
     async def insert_static_schema(self, data_set_name: str, reports_data: dict) -> dict:

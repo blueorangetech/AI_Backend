@@ -8,12 +8,14 @@ from routers.reports.kakao import create_kakao_reports, create_kakao_monent_repo
 from routers.reports.google import create_google_report, create_ga4_report
 from routers.reports.meta import create_meta_reports
 from routers.reports.mail import read_mails
+from routers.reports.tiktok import create_tiktok_reports
 
 # 서브 라우터 포함 (매체별 엔드포인트)
 from .naver import router as naver_router
 from .kakao import router as kakao_router
 from .google import router as google_router
 from .meta import router as meta_router
+from .tiktok import router as tiktok_router
 from .mail import router as mail_router
 
 from configs.customers_event import bo_customers
@@ -25,6 +27,7 @@ router.include_router(naver_router)
 router.include_router(kakao_router)
 router.include_router(google_router)
 router.include_router(meta_router)
+router.include_router(tiktok_router)
 router.include_router(mail_router)
 
 @router.post("/all")
@@ -61,6 +64,10 @@ async def create_all_report(request: TotalRequestModel):
             "criteo": {
                 "model_class": MediaRequestModel,
                 "handler": read_mails
+            },
+            "tiktok": {
+                "model_class": MediaRequestModel,
+                "handler": create_tiktok_reports
             }
         }
         result = {}

@@ -205,6 +205,24 @@ def imweb_inner_data_schema():
         bigquery.SchemaField("first_payment_operation_type", "STRING"),
     ]
 
+def tiktok_schema():
+    """TIKTOK BigQuery 테이블 스키마"""
+    FIELD_TYPE_MAP = {
+        "date": "DATETIME",
+        "campaign_id": "STRING",
+        "campaign_name": "STRING",
+        "adgroup_id": "STRING",
+        "adgroup_name": "STRING",
+        "ad_id": "STRING",
+        "ad_name": "STRING",
+        "impressions": "INTEGER",
+        "clicks": "INTEGER",
+        "spend": "INTEGER",
+        "video_play_actions": "INTEGER",
+    }
+    
+    return FIELD_TYPE_MAP
+
 def criteo_schema():
     """CRITEO BigQuery 테이블 스키마"""
     FIELD_TYPE_MAP = {

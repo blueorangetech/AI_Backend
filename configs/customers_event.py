@@ -90,7 +90,11 @@ bo_customers = {
                     }
             },
             "tiktok":{
-                "account_id": "7311146119936000001"
+                "account_id": "7311146119936000001",
+                "dimensions": ["stat_time_day", "ad_id"],
+                "metrics": [ "campaign_id", "campaign_name","adgroup_id", "adgroup_name", "ad_name", 
+                            "impressions", "clicks", "spend", "video_play_actions"
+                            ],
             },
             "criteo": {
                 "mailfolder": "121",
