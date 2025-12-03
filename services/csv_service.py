@@ -188,14 +188,19 @@ class CSVService:
         GCS에 이미 업로드된 CSV 파일을 처리하여 BigQuery에 로드
         (클라이언트가 GCS Signed URL로 직접 업로드한 경우)
 
+        **메모리 최적화**: 대용량 데이터 처리를 위해 GCS Load Job 사용
+
         처리 과정:
         1. GCS에서 파일을 다운로드
         2. pandas DataFrame으로 변환
         3. 이상치 제거 로직 적용
-        4. GCS 원본 파일 삭제
-        5. 데이터셋 생성 (없으면)
-        6. 테이블 truncate (옵션)
-        7. 정제된 데이터를 BigQuery에 직접 삽입
+        4. 행 수 저장 및 메모리 정리
+        5. GCS 원본 파일 삭제
+        6. 데이터셋 생성 (없으면)
+        7. 테이블 truncate (옵션)
+        8. 정제된 데이터를 CSV로 변환하여 GCS에 업로드
+        9. GCS에서 BigQuery로 Load Job 실행 (메모리 효율적)
+        10. GCS 정제된 파일 삭제
 
         Args:
             dataset_id: BigQuery 데이터셋 ID
@@ -224,6 +229,10 @@ class CSVService:
             logger.info(f"이상치 제거 로직 적용 중...")
             df_cleaned = self.remove_outliers(df)
 
+            # 행 수 저장 (메모리 정리 전)
+            original_rows = len(df)
+            cleaned_rows = len(df_cleaned)
+
             # 4. GCS 원본 파일 삭제
             logger.info(f"GCS 원본 파일 삭제: {blob_name}")
             await self.gcs_client.delete_file(blob_name)
@@ -237,23 +246,48 @@ class CSVService:
                 logger.info(f"테이블 truncate: {dataset_id}.{table_id}")
                 await self.bigquery_client.truncate_table(dataset_id, table_id)
 
-            # 7. 정제된 데이터를 BigQuery에 직접 삽입
-            logger.info(f"정제된 데이터를 BigQuery에 로드 중...")
+            # 7. 정제된 데이터를 CSV로 변환하여 GCS에 업로드 (메모리 효율적)
+            logger.info(f"정제된 데이터를 CSV로 변환 중...")
+            csv_buffer = StringIO()
+            df_cleaned.to_csv(csv_buffer, index=False)
+            cleaned_csv_bytes = csv_buffer.getvalue().encode('utf-8')
 
-            # DataFrame을 딕셔너리 리스트로 변환
-            data = df_cleaned.to_dict(orient='records')
+            # 메모리 정리
+            del df
+            del df_cleaned
+            del csv_buffer
 
-            # BigQuery에 직접 삽입
-            await self.bigquery_client.insert_start(dataset_id, table_id, schema, data)
+            # 정제된 CSV를 GCS에 업로드
+            cleaned_blob_name = f"cleaned_{blob_name}"
+            logger.info(f"정제된 데이터를 GCS에 업로드 중: {cleaned_blob_name}")
+            cleaned_gcs_uri = await self.gcs_client.upload_file(
+                cleaned_csv_bytes, cleaned_blob_name
+            )
+
+            # 메모리 정리
+            del cleaned_csv_bytes
+
+            # 8. GCS에서 BigQuery로 로드 (메모리 효율적)
+            logger.info(f"GCS에서 BigQuery로 데이터 로드 중: {cleaned_gcs_uri}")
+            await self._load_from_gcs_to_bigquery(
+                dataset_id=dataset_id,
+                table_id=table_id,
+                gcs_uri=cleaned_gcs_uri,
+                schema=schema
+            )
+
+            # 9. GCS 정제된 파일 삭제
+            logger.info(f"GCS 정제된 파일 삭제: {cleaned_gcs_uri}")
+            await self.gcs_client.delete_file(cleaned_blob_name)
 
             logger.info(f"GCS 파일 처리 후 BigQuery 업로드 완료: {dataset_id}.{table_id}")
 
             return {
                 "status": "success",
-                "message": f"GCS 파일 처리 후 BigQuery 업로드 완료",
-                "original_rows": len(df),
-                "cleaned_rows": len(df_cleaned),
-                "removed_rows": len(df) - len(df_cleaned)
+                "message": f"BigQuery 업로드 완료 : {cleaned_rows} 행",
+                "original_rows": original_rows,
+                "cleaned_rows": cleaned_rows,
+                "removed_rows": original_rows - cleaned_rows
             }
 
         except Exception as e:
