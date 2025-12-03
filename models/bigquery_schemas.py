@@ -178,6 +178,7 @@ def meta_schema():
         "impressions": "INTEGER",
         "clicks": "INTEGER",
         "spend": "FLOAT",
+        "video_views": "INTEGER",
     }
     return FIELD_TYPE_MAP
 

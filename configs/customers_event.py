@@ -23,6 +23,7 @@ bo_customers = {
                     "impressions",
                     "clicks",
                     "spend",
+                    "video_play_actions"
                 ],
             },
             "google_ads": {
