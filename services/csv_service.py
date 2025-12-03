@@ -175,33 +175,32 @@ class CSVService:
 
         return df_cleaned
 
-    async def upload_csv_stream_with_outlier_removal(
+
+    async def process_gcs_file_with_outlier_removal(
         self,
         dataset_id: str,
         table_id: str,
-        file_obj,
-        filename: str,
+        blob_name: str,
         schema: Optional[List] = None,
         truncate: bool = True
     ) -> Dict[str, Any]:
         """
-        CSV 파일을 GCS에 업로드 후 읽어서 이상치를 제거하고 BigQuery에 로드
+        GCS에 이미 업로드된 CSV 파일을 처리하여 BigQuery에 로드
+        (클라이언트가 GCS Signed URL로 직접 업로드한 경우)
 
         처리 과정:
-        1. CSV 파일을 GCS에 스트리밍 업로드
-        2. GCS에서 파일을 다운로드
-        3. pandas DataFrame으로 변환
-        4. 이상치 제거 로직 적용
-        5. GCS의 원본 파일 삭제
-        6. 데이터셋 생성 (없으면)
-        7. 테이블 truncate (옵션)
-        8. 정제된 데이터를 BigQuery에 직접 삽입
+        1. GCS에서 파일을 다운로드
+        2. pandas DataFrame으로 변환
+        3. 이상치 제거 로직 적용
+        4. GCS 원본 파일 삭제
+        5. 데이터셋 생성 (없으면)
+        6. 테이블 truncate (옵션)
+        7. 정제된 데이터를 BigQuery에 직접 삽입
 
         Args:
             dataset_id: BigQuery 데이터셋 ID
             table_id: BigQuery 테이블 ID
-            file_obj: 파일 객체 (file-like object)
-            filename: 원본 파일명
+            blob_name: GCS blob 경로
             schema: BigQuery 스키마 (선택)
             truncate: True이면 기존 데이터 삭제 후 삽입
 
@@ -211,41 +210,34 @@ class CSVService:
         if not self.gcs_client:
             raise Exception("GCS 클라이언트가 설정되지 않았습니다")
 
-        blob_name = None
-
         try:
-            # 1. GCS에 파일 스트리밍 업로드
-            logger.info(f"GCS에 파일 스트리밍 업로드 시작...")
-            blob_name = self.gcs_client.generate_blob_name(dataset_id, table_id, filename)
-            gcs_uri = await self.gcs_client.upload_file_stream(file_obj, blob_name)
-
-            # 2. GCS에서 파일 다운로드
-            logger.info(f"GCS에서 파일 다운로드 중: {gcs_uri}")
+            # 1. GCS에서 파일 다운로드
+            logger.info(f"GCS에서 파일 다운로드 중: {blob_name}")
             file_content = await self.gcs_client.download_file(blob_name)
 
-            # 3. pandas DataFrame으로 변환
+            # 2. pandas DataFrame으로 변환
             logger.info(f"CSV 파일을 DataFrame으로 변환 중...")
             df = pd.read_csv(BytesIO(file_content))
             logger.info(f"원본 데이터: {len(df)}행, {len(df.columns)}열")
 
-            # 4. 이상치 제거
+            # 3. 이상치 제거
             logger.info(f"이상치 제거 로직 적용 중...")
             df_cleaned = self.remove_outliers(df)
 
-            # 5. GCS 원본 파일 삭제
-            logger.info(f"GCS 원본 파일 삭제: {gcs_uri}")
+            # 4. GCS 원본 파일 삭제
+            logger.info(f"GCS 원본 파일 삭제: {blob_name}")
             await self.gcs_client.delete_file(blob_name)
 
-            # 6. 데이터셋 생성 (없으면)
+            # 5. 데이터셋 생성 (없으면)
             logger.info(f"데이터셋 확인/생성: {dataset_id}")
             await self.bigquery_client.create_dataset(dataset_id)
 
-            # 7. 테이블 truncate (옵션)
+            # 6. 테이블 truncate (옵션)
             if truncate:
                 logger.info(f"테이블 truncate: {dataset_id}.{table_id}")
                 await self.bigquery_client.truncate_table(dataset_id, table_id)
 
-            # 8. 정제된 데이터를 BigQuery에 직접 삽입
+            # 7. 정제된 데이터를 BigQuery에 직접 삽입
             logger.info(f"정제된 데이터를 BigQuery에 로드 중...")
 
             # DataFrame을 딕셔너리 리스트로 변환
@@ -254,22 +246,21 @@ class CSVService:
             # BigQuery에 직접 삽입
             await self.bigquery_client.insert_start(dataset_id, table_id, schema, data)
 
-            logger.info(f"이상치 제거 후 CSV 업로드 완료: {dataset_id}.{table_id}")
+            logger.info(f"GCS 파일 처리 후 BigQuery 업로드 완료: {dataset_id}.{table_id}")
 
             return {
                 "status": "success",
-                "message": f"이상치 제거 후 CSV 업로드 완료",
+                "message": f"GCS 파일 처리 후 BigQuery 업로드 완료",
                 "original_rows": len(df),
                 "cleaned_rows": len(df_cleaned),
                 "removed_rows": len(df) - len(df_cleaned)
             }
 
         except Exception as e:
-            logger.error(f"이상치 제거 CSV 업로드 실패: {str(e)}")
-            # 오류 발생 시 GCS 파일 정리
-            if blob_name:
-                try:
-                    await self.gcs_client.delete_file(blob_name)
-                except:
-                    pass
-            raise Exception(f"이상치 제거 CSV 업로드 실패: {str(e)}")
+            logger.error(f"GCS 파일 처리 실패: {str(e)}")
+            # 오류 발생 시 GCS 파일 정리 시도
+            try:
+                await self.gcs_client.delete_file(blob_name)
+            except:
+                pass
+            raise Exception(f"GCS 파일 처리 실패: {str(e)}")

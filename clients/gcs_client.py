@@ -1,7 +1,7 @@
 from google.cloud import storage
 from utils.gcs_client_manager import get_gcs_client
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +146,43 @@ class GCSClient:
         except Exception as e:
             logger.error(f"Failed to download file from GCS: {str(e)}")
             raise Exception(f"GCS 파일 다운로드 실패: {str(e)}")
+
+    async def generate_signed_url(
+        self,
+        blob_name: str,
+        expiration_minutes: int = 30,
+        method: str = "PUT"
+    ) -> str:
+        """
+        GCS Signed URL 생성 (클라이언트가 직접 업로드할 수 있도록)
+
+        Args:
+            blob_name: GCS blob 이름
+            expiration_minutes: URL 만료 시간 (분)
+            method: HTTP 메서드 (PUT, POST 등)
+
+        Returns:
+            str: Signed URL
+        """
+        try:
+            client = await self._get_client()
+            bucket = client.bucket(self.bucket_name)
+            blob = bucket.blob(blob_name)
+
+            # Signed URL 생성
+            url = blob.generate_signed_url(
+                version="v4",
+                expiration=timedelta(minutes=expiration_minutes),
+                method=method,
+                content_type="text/csv"
+            )
+
+            logger.info(f"Signed URL generated for {blob_name}")
+            return url
+
+        except Exception as e:
+            logger.error(f"Failed to generate signed URL: {str(e)}")
+            raise Exception(f"Signed URL 생성 실패: {str(e)}")
 
     def generate_blob_name(self, dataset_id: str, table_id: str, filename: str) -> str:
         """
