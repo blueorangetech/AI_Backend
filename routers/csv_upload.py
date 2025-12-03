@@ -1,5 +1,5 @@
-from fastapi import APIRouter, UploadFile, File, Form, status, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, UploadFile, File, Form, status, HTTPException, Request
+from fastapi.responses import JSONResponse, Response
 from services.csv_service import CSVService
 from auth.google_auth_manager import get_bigquery_client, get_gcs_client
 from models.bigquery_schemas import imweb_inner_data_schema
@@ -10,6 +10,18 @@ import os
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/csv", tags=["csv"])
+
+# CORS preflight 요청 디버깅용
+@router.options("/upload/imweb")
+async def options_imweb():
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 # GCS 버킷 이름 (환경 변수 또는 설정에서 가져오기)
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "blorange")
