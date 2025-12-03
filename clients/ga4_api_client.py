@@ -32,7 +32,7 @@ class GA4APIClient:
 
         request_params = {
             "property": f"properties/{self.property_id}",
-            "date_ranges": [DateRange(start_date="7daysAgo", end_date="yesterday")],
+            "date_ranges": [DateRange(start_date="30daysAgo", end_date="yesterday")],
             "dimensions": default_dimensions,
             "metrics": [Metric(name=metric) for metric in metrics],
             "limit": 100000,  # 최대 limit 설정

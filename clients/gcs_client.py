@@ -122,6 +122,31 @@ class GCSClient:
             logger.error(f"Failed to list files from GCS: {str(e)}")
             return []
 
+    async def download_file(self, blob_name: str) -> bytes:
+        """
+        GCS에서 파일을 다운로드하여 바이트로 반환
+
+        Args:
+            blob_name: 다운로드할 파일 경로
+
+        Returns:
+            bytes: 파일 내용
+        """
+        try:
+            client = await self._get_client()
+            bucket = client.bucket(self.bucket_name)
+            blob = bucket.blob(blob_name)
+
+            # 파일 다운로드
+            file_content = blob.download_as_bytes()
+
+            logger.info(f"File downloaded from gs://{self.bucket_name}/{blob_name}")
+            return file_content
+
+        except Exception as e:
+            logger.error(f"Failed to download file from GCS: {str(e)}")
+            raise Exception(f"GCS 파일 다운로드 실패: {str(e)}")
+
     def generate_blob_name(self, dataset_id: str, table_id: str, filename: str) -> str:
         """
         GCS blob 이름 생성 (폴더 구조 포함)

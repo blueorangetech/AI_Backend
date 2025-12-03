@@ -18,48 +18,25 @@ GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "blorange")
 async def upload_imweb_csv(
     file: UploadFile = File(..., description="업로드할 IMWEB CSV 파일")):
     """
-    IMWEB INNER_data 테이블 전용 CSV 업로드 엔드포인트
+    IMWEB INNER_data 테이블 전용 CSV 업로드 엔드포인트 (이상치 제거 기능 포함)
 
-    **큰 CSV 파일에 최적화**: 스트리밍 방식으로 GCS를 통해 BigQuery에 로드합니다.
-    메모리에 전체 파일을 로드하지 않아 대용량 파일 처리가 가능합니다.
-
-    - **file**: CSV 파일 (대용량 지원)
-    - **truncate**: True이면 기존 테이블 데이터를 모두 삭제 후 삽입 (기본: True)
+    **이상치 제거 프로세스**:
+    1. CSV 파일을 GCS에 스트리밍 업로드
+    2. GCS에서 파일을 다운로드하여 pandas DataFrame으로 변환
+    3. 사용자 정의 이상치 제거 로직 적용 (csv_service.remove_outliers)
+    4. GCS 임시 파일 삭제
+    5. 정제된 데이터를 BigQuery에 직접 삽입
 
     고정값:
     - dataset_id: "imweb"
     - table_id: "INNER_data"
-    - 필수 컬럼: 17개
     - 스키마: imweb_inner_data_schema (자동 적용)
-    - GCS 버킷: run-sources-my-project-carrot-407906-asia-northeast3
 
-    처리 과정:
-    1. CSV 파일을 GCS에 스트리밍 업로드
-    2. BigQuery가 GCS에서 직접 데이터 로드 (대용량 최적화)
-    3. 업로드 완료 후 GCS 임시 파일 자동 삭제
+    **이상치 제거 로직 구현 방법**:
+    services/csv_service.py의 remove_outliers 메서드에서 이상치 제거 로직을 구현하세요.
     """
     DATASET_ID = "imweb"
     TABLE_ID = "INNER_data"
-    REQUIRED_COLUMNS = [
-        "site_owner_member",
-        "site_code",
-        "site_creator_member",
-        "main_domain",
-        "site_owner_join_time",
-        "site_creation_time",
-        "first_plan_payment_time",
-        "first_plan_version",
-        "first_plan_period",
-        "first_plan_price_with_tax",
-        "plan_end_time",
-        "trial_start_time",
-        "trial_version",
-        "is_subscription_active",
-        "subscription_type",
-        "is_pg_or_pay_active",
-        "site_payment_lead_time",
-        "first_payment_operation_type"
-    ]
 
     try:
         # 파일 확장자 확인
@@ -69,7 +46,7 @@ async def upload_imweb_csv(
                 detail="CSV 파일만 업로드 가능합니다"
             )
 
-        logger.info(f"IMWEB CSV 파일 업로드 시작 (GCS 스트리밍): {file.filename} → {DATASET_ID}.{TABLE_ID}")
+        logger.info(f"IMWEB CSV 파일 업로드 시작 (이상치 제거): {file.filename} → {DATASET_ID}.{TABLE_ID}")
 
         # BigQuery 및 GCS 클라이언트 초기화
         bigquery_client = get_bigquery_client()
@@ -79,15 +56,14 @@ async def upload_imweb_csv(
         # IMWEB 스키마 가져오기
         schema = imweb_inner_data_schema()
 
-        # CSV 스트리밍 업로드 처리 (메모리 효율적)
-        result = await csv_service.upload_csv_stream_via_gcs_to_bigquery(
+        # 이상치 제거 후 CSV 업로드
+        result = await csv_service.upload_csv_stream_with_outlier_removal(
             dataset_id=DATASET_ID,
             table_id=TABLE_ID,
-            file_obj=file.file,  # 파일 객체 직접 전달 (메모리에 로드하지 않음)
+            file_obj=file.file,
             filename=file.filename,
             schema=schema,
-            truncate=True,
-            validate_columns=False  # 큰 파일에서는 검증 스킵
+            truncate=True
         )
 
         return JSONResponse(
@@ -98,8 +74,8 @@ async def upload_imweb_csv(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"IMWEB CSV 업로드 중 오류 발생: {str(e)}")
+        logger.error(f"IMWEB CSV 업로드 (이상치 제거) 중 오류 발생: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"IMWEB CSV 업로드 실패: {str(e)}"
+            detail=f"IMWEB CSV 업로드 (이상치 제거) 실패: {str(e)}"
         )

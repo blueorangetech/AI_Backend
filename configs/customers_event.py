@@ -78,6 +78,15 @@ bo_customers = {
                             "custom":[],
                             "metric":["eventCount"],
                         },
+                    # "test": {
+                    #     "default": [
+                    #         "date", "campaignName", 
+                    #         "medium", "source", "customEvent:site_url",
+                    #         "customUser:user_id_dimension", "customEvent:site_code", "eventName"
+                    #             ],
+                    #         "custom":[],
+                    #         "metric":["eventCount"],
+                    #     },
                     "keyword":{
                         "default": [
                             "date", "sessionCampaignName",
