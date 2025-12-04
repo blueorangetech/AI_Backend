@@ -76,8 +76,8 @@ bo_customers = {
                             "sessionMedium", "sessionSource", "customEvent:site_url",
                             "customUser:user_id_dimension", "customEvent:site_code", "eventName"
                                 ],
-                            "custom":[],
                             "metric":["eventCount"],
+                            "filter":["join", "sign_up", "join_complete_landing", "FreeTrial", "purchase"],
                         },
                     # "test": {
                     #     "default": [
@@ -94,8 +94,8 @@ bo_customers = {
                             "sessionManualTerm", "customEvent:site_url",
                             "customUser:user_id_dimension", "customEvent:site_code", "eventName"
                                 ],
-                        "custom": [],
-                        "metric": ["eventCount"]
+                        "metric": ["eventCount"],
+                        "filter":["join", "sign_up", "join_complete_landing", "FreeTrial", "purchase"],
                         }
                     }
             },
@@ -148,13 +148,14 @@ bo_customers = {
                             "deviceCategory",
                             "sessionCampaignName",
                             "sessionManualAdContent",
+                            "eventName"
                         ],
-                        "custom": [
+                        "metric": ["activeUsers"],
+                        "filter": [
                             "maintenance_normal_reserve_cplt",
                             "maintenance_imported_reserve_cplt",
                             "purchase",
                         ],
-                        "metric": ["activeUsers"],
                     },
                     "inflow": {
                         "default": [

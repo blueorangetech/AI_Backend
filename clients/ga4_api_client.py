@@ -7,6 +7,7 @@ from google.analytics.data_v1beta.types import (
     Dimension,
     Filter,
     FilterExpression,
+    FilterExpressionList,
 )
 import logging
 
@@ -20,32 +21,39 @@ class GA4APIClient:
         self.admin = AnalyticsAdminServiceClient.from_service_account_info(config)
         self.property_id = property_id
 
-    def request_create_report(self, defaults, customs, metrics):
+    def request_create_report(self, defaults, metrics, event_filters):
         """GA4 탐색 보고서 생성 (페이지네이션 포함)"""
 
         # 필드명 정의
         default_dimensions = [Dimension(name=default) for default in defaults]
 
-        # 커스텀 이벤트가 있으면 eventName dimension 추가
-        if customs:
-            default_dimensions.append(Dimension(name="eventName"))
-
         request_params = {
             "property": f"properties/{self.property_id}",
-            "date_ranges": [DateRange(start_date="30daysAgo", end_date="yesterday")],
+            "date_ranges": [DateRange(start_date="7daysAgo", end_date="yesterday")],
             "dimensions": default_dimensions,
             "metrics": [Metric(name=metric) for metric in metrics],
             "limit": 100000,  # 최대 limit 설정
         }
 
-        # customs가 있을 때만 필터 추가
-        if customs:
-            request_params["dimension_filter"] = FilterExpression(
-                filter=Filter(
-                    field_name="eventName",
-                    in_list_filter=Filter.InListFilter(values=customs),
+        if event_filters:
+            filter_list = []
+            for event in event_filters:
+                filter_list.append(FilterExpression(
+                    filter=Filter(
+                        field_name="eventName",
+                        string_filter = Filter.StringFilter(
+                            match_type=Filter.StringFilter.MatchType.EXACT,
+                            value=event
+                        )
+
+                    )
                 )
             )
+            or_filter = FilterExpression(
+                or_group=FilterExpressionList(expressions=filter_list)
+            )
+            request_params["dimension_filter"] = or_filter
+
 
         # 페이지네이션을 통해 모든 데이터 수집
         all_rows = []

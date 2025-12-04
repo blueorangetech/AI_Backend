@@ -11,11 +11,11 @@ class GA4ReportServices:
 
     def create_report(self, data, report_type):
         defaults = data.get("default", [])
-        customs = data.get("custom", [])
         metrics = data.get("metric", [])
+        event_filters = data.get("filter", [])
 
-        response = self.client.request_create_report(defaults, customs, metrics)
-        if customs:
+        response = self.client.request_create_report(defaults, metrics, event_filters)
+        if event_filters:
             dimensions = defaults + ["eventName"]
 
         else:
@@ -31,7 +31,7 @@ class GA4ReportServices:
                 result[metric] = int(row.value)
 
             data.append(result)
-
+        
         data_df = pd.DataFrame(data)
         data_df["date"] = pd.to_datetime(data_df["date"], format="%Y%m%d").dt.strftime(
             "%Y-%m-%d"
