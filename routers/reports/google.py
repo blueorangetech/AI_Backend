@@ -62,7 +62,7 @@ async def create_ga4_report(request: MediaRequestModel):
         results = {}
         for report_type, data in navigation_reports.items():
             response = service.create_report(data, report_type)
-            return response
+            
             result = await bigquery_service.insert_daynamic_schema(data_set_name, response)
             results.update(result)
 
