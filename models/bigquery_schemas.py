@@ -163,6 +163,7 @@ def ga4_schema():
         "conversions": "INTEGER",
         "conversion_rate": "FLOAT",
         "eventCount": "INTEGER",
+        "keyEvents":"FLOAT",
         "eventValue": "FLOAT",
         "activUsers": "INTEGER",
     }

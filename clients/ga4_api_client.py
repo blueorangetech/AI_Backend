@@ -21,7 +21,7 @@ class GA4APIClient:
         self.admin = AnalyticsAdminServiceClient.from_service_account_info(config)
         self.property_id = property_id
 
-    def request_create_report(self, defaults, metrics, event_filters):
+    def request_create_report(self, defaults, metrics, event_filters, start):
         """GA4 탐색 보고서 생성 (페이지네이션 포함)"""
 
         # 필드명 정의
@@ -29,7 +29,7 @@ class GA4APIClient:
 
         request_params = {
             "property": f"properties/{self.property_id}",
-            "date_ranges": [DateRange(start_date="7daysAgo", end_date="yesterday")],
+            "date_ranges": [DateRange(start_date=start, end_date="yesterday")],
             "dimensions": default_dimensions,
             "metrics": [Metric(name=metric) for metric in metrics],
             "limit": 100000,  # 최대 limit 설정

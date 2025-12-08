@@ -13,8 +13,9 @@ class GA4ReportServices:
         defaults = data.get("default", [])
         metrics = data.get("metric", [])
         event_filters = data.get("filter", [])
-
-        response = self.client.request_create_report(defaults, metrics, event_filters)
+        start = data.get("date_range", "7daysAgo")
+        
+        response = self.client.request_create_report(defaults, metrics, event_filters, start)
         if event_filters:
             dimensions = defaults + ["eventName"]
 
@@ -28,7 +29,11 @@ class GA4ReportServices:
                 result[header] = row.value
 
             for row, metric in zip(rows.metric_values, metrics):
-                result[metric] = int(row.value)
+                if "keyEvents" in metrics:
+                    result[metric] = float(row.value)
+
+                else:
+                    result[metric] = int(row.value)
 
             data.append(result)
         
