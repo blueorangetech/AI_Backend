@@ -1,6 +1,7 @@
 bo_customers = {
     "imweb":{
         "data_set_name": "imweb",
+        "dmp_table": "IMWEB_dmp",
         "media_list": {
             "naver": {
                 "customer_id": "1079588",
@@ -87,9 +88,8 @@ bo_customers = {
                                 ],
                             "metric":["keyEvents"],
                             "filter":["join", "sign_up", "join_complete_landing", "FreeTrial", "purchase"],
-                            "date_range": ["30daysAgo"]
+                            "date_range": "30daysAgo"
                         },
-                    
                     "keyword":{
                         "default": [
                             "date", "sessionCampaignName",
@@ -98,7 +98,19 @@ bo_customers = {
                                 ],
                         "metric": ["eventCount"],
                         "filter":["join", "sign_up", "join_complete_landing", "FreeTrial", "purchase"],
-                        }
+                        },
+                        
+                    "keyword_users":{
+                        "default": [
+                            "date", "campaignName",
+                            "manualTerm", "customEvent:site_url",
+                            "customUser:user_id_dimension", "customEvent:site_code", "eventName"
+                                ],
+                        "metric": ["keyEvents"],
+                        "filter":["join", "sign_up", "join_complete_landing", "FreeTrial", "purchase"],
+                        "date_range": "30daysAgo"
+                        },
+
                     }
             },
             "tiktok":{

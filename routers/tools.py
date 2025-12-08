@@ -1,9 +1,12 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from bs4 import BeautifulSoup
+from configs.customers_event import bo_customers
+from services.bigquery_service import BigQueryReportService
+from auth.google_auth_manager import get_bigquery_client
 import httpx, logging, os
 
-router = APIRouter(prefix="/aitools", tags=["aitools"])
+router = APIRouter(prefix="/tools", tags=["tools"])
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +20,10 @@ class TrendRequestModel(BaseModel):
     end_date: str
     time_unit: str
     keyword_groups: list
+
+class DmpModel(BaseModel):
+    customer: str
+    data: dict
 
 
 @router.post("/search")
@@ -91,3 +98,17 @@ async def get_trend(request: TrendRequestModel):
         print(f"Error: {response.status_code}")
         print(response.text)
         return None
+    
+@router.post("/dmp")
+async def upload_dmp(request: DmpModel):
+    customer = request.customer
+    data_set_name = bo_customers[customer]["data_set_name"]
+    table_name = bo_customers[customer]["dmp_table"]
+
+    dmp_data = {table_name: [request.data]}
+
+    bigquery_client = get_bigquery_client()
+    bigquery_service = BigQueryReportService(bigquery_client)
+
+    result = await bigquery_service.insert_daynamic_schema_without_date(data_set_name, dmp_data)
+    return result

@@ -12,6 +12,7 @@ from models.bigquery_schemas import (
     meta_schema,
     criteo_schema,
     tiktok_schema,
+    dmp_schema,
 )
 import logging
 
@@ -36,6 +37,7 @@ class BigQueryReportService:
             "META": meta_schema(),
             "CRITEO": criteo_schema(),
             "TIKTOK": tiktok_schema(),
+            "DMP": dmp_schema(),
         }
 
     async def insert_static_schema(self, data_set_name: str, reports_data: dict) -> dict:
@@ -85,8 +87,13 @@ class BigQueryReportService:
             # 테이블명에서 스키마명 추출 (prefix 기반)
             if table_name.startswith("GA4"):
                 schema_name = "GA4"
+
             elif table_name.startswith("GOOGLE_ADS"):
                 schema_name = "GOOGLE_ADS"
+
+            elif "dmp" in table_name:
+                schema_name = "DMP"
+
             else:
                 schema_name = table_name
 
@@ -132,8 +139,44 @@ class BigQueryReportService:
                 logger.warning(f"{table_name} 데이터가 비어있음")
 
         return result
+    
+    async def insert_daynamic_schema_without_date(self, data_set_name: str, reports_data: dict) -> dict:
+        """동적 스키마를 가진 데이터를 BigQuery에 삽입 / 날짜 정보 없음"""
+        result = {}
 
-    def _create_schema(self, basic_schema: str, data: list):
+        await self.client.create_dataset(data_set_name)
+
+        for table_name, data in reports_data.items():
+            # 테이블명에서 스키마명 추출 (prefix 기반)
+            if "dmp" in table_name:
+                schema_name = "DMP"
+
+            else:
+                schema_name = table_name
+
+            basic_schema = self.config[schema_name]
+
+            schema = self._create_schema(basic_schema, data)
+            result[table_name] = False
+
+            if data:  # 데이터가 있으면
+                try:
+                    if len(schema) == 0:
+                        raise Exception(f"생성된 BigQuery 스키마가 없습니다")
+
+                    await self.client.insert_start(data_set_name, table_name, schema, data)
+                    result[table_name] = True
+                    logger.info(f"{table_name} 데이터 BigQuery 삽입 완료")
+
+                except Exception as e:
+                    logger.error(f"{table_name} BigQuery 삽입 실패: {str(e)}")
+                    result[table_name] = False
+            else:
+                logger.warning(f"{table_name} 데이터가 비어있음")
+
+        return result
+    
+    def _create_schema(self, basic_schema: dict, data: list):
         if not data:
             return []
 

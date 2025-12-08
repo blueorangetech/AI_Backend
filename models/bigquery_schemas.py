@@ -239,3 +239,14 @@ def criteo_schema():
         "cost": "FLOAT",
     } 
     return FIELD_TYPE_MAP
+
+def dmp_schema():
+    """FIRST PARTY DATA 테이블 스키마"""
+    FIELD_TYPE_MAP = {
+        "event": "STRING",
+        "imwebUserid": "STRING",
+        "email": "STRING",
+        "phone_number": "STRING",
+        "event_id": "STRING"
+    } 
+    return FIELD_TYPE_MAP
