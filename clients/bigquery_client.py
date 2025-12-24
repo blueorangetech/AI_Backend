@@ -295,6 +295,23 @@ class BigQueryClient:
             time.sleep(0.3)
 
         return {"status": "error", "message": "Table creation timeout after 30 seconds"}
+    
+    async def query_all_data(self, dataset_id, table_id):
+        """특정 테이블의 전체 데이터를 조회"""
+        try:
+            client = await self._get_client()
+            query = f"""
+            SELECT *
+            FROM `{client.project}.{dataset_id}.{table_id}`
+            """
+            query_job = client.query(query)
+            results = query_job.result()
+            
+            return results
+
+        except Exception as e:
+            logger.error(f"Failed to query data: {str(e)}")
+            raise Exception(f"BigQuery 데이터 조회 실패: {str(e)}")
 
     async def query_data_by_date(self, dataset_id, table_id, start_date, end_date):
         """특정 테이블의 특정 날짜 데이터를 조회"""

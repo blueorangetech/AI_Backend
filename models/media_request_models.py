@@ -8,6 +8,9 @@ class TotalRequestModel(BaseModel):
 class MediaRequestModel(BaseModel):
     customer: str
 
+class MediaBudgetRequestModel(MediaRequestModel):
+    type: str
+
 class GFATokenRequestModel(BaseModel):
     code : str
     state : str

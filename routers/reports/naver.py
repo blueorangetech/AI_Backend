@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from models.media_request_models import MediaRequestModel
+from models.media_request_models import MediaRequestModel, MediaBudgetRequestModel
 from services.naver_service import NaverReportService
 from auth.gfa_token_manager import GFATokenManager
 from services.gfa_service import GFAReportService
@@ -41,7 +41,27 @@ async def create_naver_reports(request: MediaRequestModel):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@router.post("/gfa/budget")
+async def adjust_gfa_budget(request: MediaBudgetRequestModel):
+    """GFA 광고 예산 변경"""
+    try:
+        customer = request.customer
+        customer_info = bo_customers[customer]["media_list"]["gfa"]
+        customer_id = customer_info["customer_id"]
+        adjust_type = request.type
 
+        token_manager = GFATokenManager()
+        access_token = await token_manager.get_vaild_token()
+
+        client = get_gfa_client(access_token, customer_id)
+        service = GFAReportService(client)
+
+        response = await service.adjust_budget(type=adjust_type)
+        return response
+    
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    
 @router.post("/gfa")
 async def create_gfa_reports(request: MediaRequestModel):
     """GFA 광고 성과 다운로드"""
@@ -69,3 +89,4 @@ async def create_gfa_reports(request: MediaRequestModel):
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
