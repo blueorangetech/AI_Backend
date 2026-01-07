@@ -204,9 +204,9 @@ class BigQueryReportService:
         return schema_fields
     
     async def get_all_data(self, dataset_id: str, table_id: str):
-        """특정 테이블의 특정 날짜 데이터를 조회"""
+        """특정 테이블의 전체 데이터를 조회"""
         try:
-            data = await self.client.query_data_by_date(dataset_id, table_id)
+            data = await self.client.query_all_data(dataset_id, table_id)
             result = []
             
             # 결과를 딕셔너리 리스트로 변환
