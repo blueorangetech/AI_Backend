@@ -48,7 +48,49 @@ class BigQueryClient:
 
         except Exception as e:
             logger.error(f"Failed to list datasets: {e}")
-            return []
+            return f"Failed to list datasets: {e}"
+    
+    async def list_tables(self, dataset_id):
+        """테이블 목록 조회"""
+        try:
+            client = await self._get_client()
+            dataset_ref = client.dataset(dataset_id)
+            tables = client.list_tables(dataset_ref)
+
+            table_info = []
+            for table in tables:
+                table_info.append({"table_id": table.table_id})
+            
+            return table_info
+        
+        except Exception as e:
+            logger.error(f"Failed to list tables: {e}")
+            return f"Failed to list tables: {e}"
+    
+    async def get_table_schema(self, dataset_id, table_id):
+        """테이블 스키마 조회"""
+        try:
+            client = await self._get_client()
+            table_ref = client.dataset(dataset_id).table(table_id)
+            table = client.get_table(table_ref)
+            return table.schema
+        
+        except Exception as e:
+            logger.error(f"Failed to get table schema: {e}")
+            return f"Failed to get table schema: {e}"
+    
+    async def execute_bigquery_sql(self, sql: str):
+        """BigQuery SQL 쿼리 실행"""
+        try:
+            client = await self._get_client()
+            query_job = client.query(sql)
+            results = query_job.result()
+            return results
+        
+        except Exception as e:
+            logger.error(f"Failed to execute SQL: {e}")
+            return f"Failed to execute SQL: {e}"
+    
 
     async def _create_table(self, dataset_id, table_id, schema):
         client = await self._get_client()
