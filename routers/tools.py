@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Body
 from pydantic import BaseModel
 from bs4 import BeautifulSoup
 from configs.customers_event import bo_customers
@@ -111,4 +111,36 @@ async def upload_dmp(request: DmpModel):
     bigquery_service = BigQueryReportService(bigquery_client)
 
     result = await bigquery_service.insert_daynamic_schema_without_date(data_set_name, dmp_data)
+    return result
+
+@router.get("/dataset_list")
+async def get_dataset_list():
+    bigquery_client = get_bigquery_client()
+    bigquery_service = BigQueryReportService(bigquery_client)
+
+    result = await bigquery_service.get_dataset_list()
+    return result
+
+@router.get("/table_list")
+async def get_table_list(dataset_id: str):
+    bigquery_client = get_bigquery_client()
+    bigquery_service = BigQueryReportService(bigquery_client)
+    
+    result = await bigquery_service.get_table_list(dataset_id)
+    return result
+
+@router.get("/table_schema")
+async def get_table_schema(dataset_id: str, table_id: str):
+    bigquery_client = get_bigquery_client()
+    bigquery_service = BigQueryReportService(bigquery_client)
+    
+    result = await bigquery_service.get_table_schema(dataset_id, table_id)
+    return result
+
+@router.post("/execute_sql")
+async def execute_bigquery_sql(sql_query: str = Body(..., embed=True)):
+    bigquery_client = get_bigquery_client()
+    bigquery_service = BigQueryReportService(bigquery_client)
+    
+    result = await bigquery_service.execute_bigquery_sql(sql_query)
     return result

@@ -48,7 +48,54 @@ class BigQueryClient:
 
         except Exception as e:
             logger.error(f"Failed to list datasets: {e}")
-            return []
+            return f"Failed to list datasets: {e}"
+    
+    async def list_tables(self, dataset_id):
+        """테이블 목록 조회"""
+        try:
+            client = await self._get_client()
+            dataset_ref = client.dataset(dataset_id)
+            tables = client.list_tables(dataset_ref)
+
+            table_info = []
+            for table in tables:
+                table_info.append({"table_id": table.table_id})
+            
+            return table_info
+        
+        except Exception as e:
+            logger.error(f"Failed to list tables: {e}")
+            return f"Failed to list tables: {e}"
+    
+    async def get_table_schema(self, dataset_id, table_id):
+        """테이블 스키마 조회"""
+        try:
+            client = await self._get_client()
+            table_ref = client.dataset(dataset_id).table(table_id)
+            table = client.get_table(table_ref)
+            return table.schema
+        
+        except Exception as e:
+            logger.error(f"Failed to get table schema: {e}")
+            return f"Failed to get table schema: {e}"
+    
+    async def execute_bigquery_sql(self, sql: str):
+        """BigQuery SQL 쿼리 실행"""
+        try:
+            client = await self._get_client()
+            query_job = client.query(sql)
+            results = query_job.result()
+            
+            final_data = []
+            for row in results:
+                final_data.append(dict(row)) # 각 행을 dict로 변환
+
+            return {"data": final_data}
+        
+        except Exception as e:
+            logger.error(f"Failed to execute SQL: {e}")
+            return f"Failed to execute SQL: {e}"
+    
 
     async def _create_table(self, dataset_id, table_id, schema):
         client = await self._get_client()
@@ -295,6 +342,23 @@ class BigQueryClient:
             time.sleep(0.3)
 
         return {"status": "error", "message": "Table creation timeout after 30 seconds"}
+    
+    async def query_all_data(self, dataset_id, table_id):
+        """특정 테이블의 전체 데이터를 조회"""
+        try:
+            client = await self._get_client()
+            query = f"""
+            SELECT *
+            FROM `{client.project}.{dataset_id}.{table_id}`
+            """
+            query_job = client.query(query)
+            results = query_job.result()
+            
+            return results
+
+        except Exception as e:
+            logger.error(f"Failed to query data: {str(e)}")
+            raise Exception(f"BigQuery 데이터 조회 실패: {str(e)}")
 
     async def query_data_by_date(self, dataset_id, table_id, start_date, end_date):
         """특정 테이블의 특정 날짜 데이터를 조회"""
