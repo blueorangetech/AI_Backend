@@ -85,7 +85,12 @@ class BigQueryClient:
             client = await self._get_client()
             query_job = client.query(sql)
             results = query_job.result()
-            return results
+            
+            final_data = []
+            for row in results:
+                final_data.append(dict(row)) # 각 행을 dict로 변환
+
+            return {"data": final_data}
         
         except Exception as e:
             logger.error(f"Failed to execute SQL: {e}")

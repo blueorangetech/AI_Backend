@@ -283,4 +283,5 @@ class BigQueryReportService:
             if re.search(rf"\b{keyword}\b", stripped_sql):
                 return f"금지된 문법 사용 {keyword}"
             
-        
+        sql_result = await self.client.execute_bigquery_sql(sql)
+        return sql_result
