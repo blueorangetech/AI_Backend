@@ -26,7 +26,7 @@ class HTTPClientManager:
             async with self._lock:
                 if self._client is None:
                     self._client = httpx.AsyncClient(
-                        timeout=httpx.Timeout(30.0),  # 30초 타임아웃
+                        timeout=httpx.Timeout(300.0),  # 5분 타임아웃
                         limits=httpx.Limits(max_connections=100, max_keepalive_connections=20)
                     )
                     logger.info("새로운 HTTP 클라이언트가 생성되었습니다.")

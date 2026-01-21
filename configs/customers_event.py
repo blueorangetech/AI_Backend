@@ -128,6 +128,22 @@ bo_customers = {
             }
         }
     },
+    "atria": {
+        "data_set_name": "atria",
+        "media_list": {
+            "naver": {"customer_id": "1099869",
+                      "master_list": ["Campaign", "Adgroup", "Keyword", "ShoppingProduct"],
+                      "stat_types": ["AD", "AD_CONVERSION", "SHOPPINGKEYWORD_DETAIL", "SHOPPINGKEYWORD_CONVERSION_DETAIL"]
+                      },
+            "gfa": {"customer_id": "1792303"}
+        }
+    },
+    "lg_bl2": {
+        "data_set_name": "lg_bl2",
+        "media_list": {
+            "gfa": {"customer_id": "45072"}
+        }
+    },
     "speed_mate": {
         "data_set_name": "speed_mate",
         "media_list": {
