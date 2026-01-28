@@ -120,6 +120,7 @@ class NaverReportService:
         keys = master_list + stat_types
         header_list = {}
 
+        # 마스터 리포트를 header_list 변수에 추가
         for key in keys:
             for report in report_list:
                 report_name = f"{key}_report"
@@ -154,9 +155,9 @@ class NaverReportService:
                     if col in df.columns:
                         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
             
-            data[key] = df
-            
+            data[key] = df    
         logger.info(f"Report Load Complete")
+
         # 마스터 데이터를 딕셔너리로 변환
         master_dict = {}
         
@@ -164,7 +165,10 @@ class NaverReportService:
         for master_name in master_list:
             config_data = naver_master_config[master_name]
             id, name = config_data["id"], config_data["name"]
-            filtered_data = data[master_name].dropna(subset=[name])
+            
+            name = name if isinstance(name, list) else [name]
+            
+            filtered_data = data[master_name].dropna(subset=name)
             master_dict[master_name] = filtered_data.set_index(id)[name]
             logger.info(f"{master_name} Index Complete")
 
@@ -180,21 +184,23 @@ class NaverReportService:
             if "AD" in stat_type:
                 basics.append("Keyword")
 
-            # Shooping 리포트는 Shopping 사용
+            # Shopping 리포트는 Shopping 사용
             if "SHOPPING" in stat_type:
                 basics.append("ShoppingProduct")
 
             for basic in basics:
                 config_data = naver_master_config[basic]
                 id, name = config_data["id"], config_data["name"]
-                report[name] = report[id].map(master_dict[basic]).fillna("-")
-            
+                # report[name] = report[id].map(master_dict[basic]).fillna("-")
+                report = pd.merge(report, master_dict[basic], on=id, how="left").fillna("-")
+                
             report["date"] = pd.to_datetime(report["date"], format="%Y%m%d").dt.strftime("%Y-%m-%d")
+            
             valid_header = naver_vaild_fields[stat_type]
             report = report[valid_header]
             report = report.to_dict("records")
             result[f"NAVER_{stat_type}"] = report
-            basics.pop()
+            basics = ["Campaign", "Adgroup"] # basics 초기화
 
         return result
 

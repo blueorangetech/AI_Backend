@@ -78,7 +78,7 @@ async def create_gfa_reports(request: MediaRequestModel):
         client = get_gfa_client(access_token, customer_id)
         service = GFAReportService(client)
         response = await service.get_performance_data()
-        
+        return response
         # BigQuery 연결
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)

@@ -128,6 +128,15 @@ bo_customers = {
             }
         }
     },
+    "atria": {
+        "data_set_name": "atria",
+        "media_list": {
+            "naver": {"customer_id": "1099869",
+                      "master_list": ["Campaign", "Adgroup", "Keyword", "ShoppingProduct"],
+                      "stat_types": ["AD", "AD_CONVERSION", "SHOPPINGKEYWORD_DETAIL", "SHOPPINGKEYWORD_CONVERSION_DETAIL"]
+                      },
+        }
+    },
     "speed_mate": {
         "data_set_name": "speed_mate",
         "media_list": {

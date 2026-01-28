@@ -64,7 +64,7 @@ naver_field_master = {
         "regTm",
         "delTm",
         "productID",
-        "productIDOfMall",
+        "productIDofMall",
         "productName",
         "productImageUrl",
         "pcLandingUrl",
@@ -152,10 +152,10 @@ naver_field_master = {
 }
 
 naver_master_config = {
-    "Campaign": {"id": "campaignID", "name": "campaignName"},
-    "Adgroup": {"id": "adGroupID", "name": "adGroupName"},
-    "Keyword": {"id": "adKeywordID", "name": "adKeyword"},
-    "ShoppingProduct": {"id": "adID", "name": "productName"}
+    "Campaign": {"id": "campaignID", "name": ["campaignName"]},
+    "Adgroup": {"id": "adGroupID", "name": ["adGroupName"]},
+    "Keyword": {"id": "adKeywordID", "name": ["adKeyword"]},
+    "ShoppingProduct": {"id": "adID", "name": ["productName", "productID", "productIDofMall"]}
 }
 
 
@@ -168,6 +168,8 @@ naver_vaild_fields = {
         "adGroupName",
         "adKeywordID",
         "adKeyword",
+        "adID",
+        "pcMobileType",
         "impressions",
         "clicks",
         "cost",
@@ -181,6 +183,8 @@ naver_vaild_fields = {
         "adGroupName",
         "adKeywordID",
         "adKeyword",
+        "adID",
+        "pcMobileType",
         "conversionType",
         "conversionCount",
         "salesByConversion",
@@ -194,6 +198,9 @@ naver_vaild_fields = {
         "searchKeyword",
         "adID",
         "productName",
+        "productID",
+        "productIDofMall",
+        "pcMobileType",
         "impressions",
         "clicks",
         "cost",
@@ -208,6 +215,9 @@ naver_vaild_fields = {
         "searchKeyword",
         "adID",
         "productName",
+        "productID",
+        "productIDofMall",
+        "pcMobileType",
         "conversionType",
         "conversionCount",
         "salesByConversion",

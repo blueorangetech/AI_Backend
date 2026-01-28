@@ -15,7 +15,7 @@ class GFAReportService:
         
         response = await self.client.get_performance(yesterday, yesterday)
         performance_data: List[Dict[str, Any]] = response.get("rows", [])
-
+        
         index = {"campaigns": {}, "adsets": {}, "creatives": {}}
 
         for target in index:
