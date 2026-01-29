@@ -194,29 +194,6 @@ def meta_schema():
     return FIELD_TYPE_MAP
 
 
-def imweb_inner_data_schema():
-    """IMWEB INNER_data BigQuery 테이블 스키마"""
-    return [
-        bigquery.SchemaField("site_owner_member", "STRING"),
-        bigquery.SchemaField("site_code", "STRING"),
-        bigquery.SchemaField("site_creator_member", "STRING"),
-        bigquery.SchemaField("main_domain", "STRING"),
-        bigquery.SchemaField("site_owner_join_time", "TIMESTAMP"),
-        bigquery.SchemaField("site_creation_time", "TIMESTAMP"),
-        bigquery.SchemaField("first_plan_payment_time", "TIMESTAMP"),
-        bigquery.SchemaField("first_plan_version", "STRING"),
-        bigquery.SchemaField("first_plan_period", "FLOAT"),
-        bigquery.SchemaField("first_plan_price_with_tax", "FLOAT"),
-        bigquery.SchemaField("plan_end_time", "TIMESTAMP"),
-        bigquery.SchemaField("trial_start_time", "TIMESTAMP"),
-        bigquery.SchemaField("trial_version", "STRING"),
-        bigquery.SchemaField("is_subscription_active", "BOOLEAN"),
-        bigquery.SchemaField("subscription_type", "STRING"),
-        bigquery.SchemaField("is_pg_or_pay_active", "BOOLEAN"),
-        bigquery.SchemaField("site_payment_lead_time", "FLOAT"),
-        bigquery.SchemaField("first_payment_operation_type", "STRING"),
-    ]
-
 def tiktok_schema():
     """TIKTOK BigQuery 테이블 스키마"""
     FIELD_TYPE_MAP = {
@@ -250,8 +227,51 @@ def criteo_schema():
     } 
     return FIELD_TYPE_MAP
 
+
+def imweb_inner_data_schema():
+    """IMWEB INNER_data BigQuery 테이블 스키마"""
+    return [
+        bigquery.SchemaField("site_owner_member", "STRING"),
+        bigquery.SchemaField("site_code", "STRING"),
+        bigquery.SchemaField("site_creator_member", "STRING"),
+        bigquery.SchemaField("main_domain", "STRING"),
+        bigquery.SchemaField("site_owner_join_time", "TIMESTAMP"),
+        bigquery.SchemaField("site_creation_time", "TIMESTAMP"),
+        bigquery.SchemaField("first_plan_payment_time", "TIMESTAMP"),
+        bigquery.SchemaField("first_plan_version", "STRING"),
+        bigquery.SchemaField("first_plan_period", "FLOAT"),
+        bigquery.SchemaField("first_plan_price_with_tax", "FLOAT"),
+        bigquery.SchemaField("plan_end_time", "TIMESTAMP"),
+        bigquery.SchemaField("trial_start_time", "TIMESTAMP"),
+        bigquery.SchemaField("trial_version", "STRING"),
+        bigquery.SchemaField("is_subscription_active", "BOOLEAN"),
+        bigquery.SchemaField("subscription_type", "STRING"),
+        bigquery.SchemaField("is_pg_or_pay_active", "BOOLEAN"),
+        bigquery.SchemaField("site_payment_lead_time", "FLOAT"),
+        bigquery.SchemaField("first_payment_operation_type", "STRING"),
+    ]
+
+def hanssem_insight_schema():
+    return [
+        bigquery.SchemaField("date", "DATE"),
+        bigquery.SchemaField("media", "STRING"),
+        bigquery.SchemaField("utm_campaign", "STRING"),
+        bigquery.SchemaField("utm_content", "STRING"),
+        bigquery.SchemaField("utm_content_1", "STRING"),
+        bigquery.SchemaField("utm_content_2", "STRING"),
+        bigquery.SchemaField("utm_content_3", "STRING"),
+        bigquery.SchemaField("utm_content_4", "STRING"),
+        bigquery.SchemaField("utm_content_5", "STRING"),
+        bigquery.SchemaField("utm_content_6", "STRING"),
+        bigquery.SchemaField("utm_content_7", "STRING"),
+        bigquery.SchemaField("impressions", "INTEGER"),
+        bigquery.SchemaField("clicks", "INTEGER"),
+        bigquery.SchemaField("cost", "FLOAT"),
+        bigquery.SchemaField("consultation_requests", "INTEGER"),
+    ]
+
 def dmp_schema():
-    """FIRST PARTY DATA 테이블 스키마"""
+    """IMWEB FIRST PARTY DATA 테이블 스키마"""
     FIELD_TYPE_MAP = {
         "event": "STRING",
         "imwebUserid": "STRING",
