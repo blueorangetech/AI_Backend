@@ -174,6 +174,76 @@ class CSVService:
         logger.info(f"이상치 제거 후 데이터: {len(df_cleaned)}행 (제거된 행: {len(df) - len(df_cleaned)})")
 
         return df_cleaned
+    
+    async def upload_file_direct(
+        self,
+        dataset_id: str,
+        table_id: str,
+        file_content: bytes,
+        filename: str,
+        schema: Optional[List] = None,
+        truncate: bool = True,
+        processor_func: Optional[callable] = None
+    ) -> Dict[str, Any]:
+        """
+        파일을 서버에서 직접 BigQuery로 업로드 (GCS 경유 안 함)
+        
+        Args:
+            dataset_id: BigQuery 데이터셋 ID
+            table_id: BigQuery 테이블 ID
+            file_content: 파일 내용 (bytes)
+            filename: 파일명 (확장자 확인용)
+            schema: BigQuery 스키마
+            truncate: 기존 데이터 삭제 여부
+            processor_func: 데이터프레임 가공 함수 (선택 사항)
+        """
+        try:
+            # 1. 파일 형식 확인 및 읽기
+            logger.info(f"직접 업로드 처리 시작: {filename}")
+            
+            if filename.lower().endswith('.csv'):
+                df = pd.read_csv(BytesIO(file_content))
+            elif filename.lower().endswith(('.xlsx', '.xls')):
+                df = pd.read_excel(BytesIO(file_content))
+            else:
+                # 기본값 CSV
+                df = pd.read_csv(BytesIO(file_content))
+            
+            # 2. 데이터 가공 로직 적용 (전달된 함수가 있을 경우)
+            if processor_func:
+                logger.info(f"데이터 가공 로직 적용 중...")
+                df = processor_func(df)
+            
+            logger.info(f"데이터 로드 완료: {len(df)}행")
+            
+            # 2. 데이터셋 생성 (없으면)
+            await self.bigquery_client.create_dataset(dataset_id)
+            
+            # 3. BigQuery에 삽입 (truncate 여부를 함께 전달)
+            # dict 리스트로 변환
+            rows = df.to_dict(orient='records')
+            
+            # BigQueryClient의 insert_start 사용 (이제 truncate 파라미터를 지원함)
+            result = await self.bigquery_client.insert_start(
+                dataset_id=dataset_id,
+                table_id=table_id,
+                schema=schema,
+                rows=rows,
+                truncate=truncate
+            )
+            
+            if result.get("status") == "success":
+                return {
+                    "status": "success",
+                    "message": f"BigQuery 업로드 완료: {len(df)}행",
+                    "rows_inserted": len(df)
+                }
+            else:
+                raise Exception(result.get("message", "BigQuery 삽입 실패"))
+
+        except Exception as e:
+            logger.error(f"직접 업로드 중 오류 발생: {str(e)}")
+            raise Exception(f"BigQuery 직접 업로드 실패: {str(e)}")
 
 
     async def process_gcs_file_with_outlier_removal(
@@ -208,6 +278,7 @@ class CSVService:
             blob_name: GCS blob 경로
             schema: BigQuery 스키마 (선택)
             truncate: True이면 기존 데이터 삭제 후 삽입
+            processor_func: 데이터프레임 가공 함수 (선택 사항)
 
         Returns:
             Dict: 업로드 결과
@@ -222,10 +293,16 @@ class CSVService:
 
             # 2. pandas DataFrame으로 변환
             logger.info(f"CSV 파일을 DataFrame으로 변환 중...")
-            df = pd.read_csv(BytesIO(file_content))
+            df = pd.read_csv(io.BytesIO(file_content))
+            
+            # 데이터 가공 로직 적용
+            if processor_func:
+                logger.info("데이터 가공 로직 적용 중...")
+                df = processor_func(df)
+                
             logger.info(f"원본 데이터: {len(df)}행, {len(df.columns)}열")
 
-            # 3. 이상치 제거
+            # 3. 이상치 제거 (기본 로직 유지)
             logger.info(f"이상치 제거 로직 적용 중...")
             df_cleaned = self.remove_outliers(df)
 

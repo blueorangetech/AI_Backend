@@ -265,13 +265,15 @@ class BigQueryClient:
                 )
         return total_error_summary
 
-    async def _insert_rows(self, table_id, rows):
+    async def _insert_rows(self, table_id, rows, schema=None, write_disposition=bigquery.WriteDisposition.WRITE_APPEND):
         """
         BigQuery에 로드 방식으로 데이터 삽입
 
         Args:
             table_id: 테이블 ID (project.dataset.table 형식)
             rows: 삽입할 데이터 리스트
+            schema: BigQuery 스키마 (선택 사항)
+            write_disposition: 쓰기 방식 (WRITE_APPEND 또는 WRITE_TRUNCATE)
 
         Returns:
             bool: 삽입 성공 여부
@@ -299,8 +301,9 @@ class BigQueryClient:
             # 로드 작업 설정
             job_config = bigquery.LoadJobConfig(
                 source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
-                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-                autodetect=False,  # 스키마 자동 감지 비활성화
+                write_disposition=write_disposition,
+                schema=schema,  # 스키마 명시적 제공
+                autodetect=True if not schema else False,  # 스키마가 없으면 자동 감지
                 ignore_unknown_values=True  # 알 수 없는 필드 무시
             )
 
@@ -319,24 +322,33 @@ class BigQueryClient:
             logger.error(f"Load job failed - {str(e)}")
             raise Exception(f"BigQuery 로드 실패: {str(e)}")
 
-    async def insert_start(self, dataset_id, table_id, schema, rows):
+    async def insert_start(self, dataset_id, table_id, schema, rows, truncate=False):
         client = await self._get_client()
         table_address = f"{client.project}.{dataset_id}.{table_id}"
+        
+        # 쓰기 방식 결정
+        write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE if truncate else bigquery.WriteDisposition.WRITE_APPEND
 
         if not await self._table_exists(dataset_id, table_id):
+            logger.info(f"Creating table: {table_address}")
             await self._create_table(dataset_id, table_id, schema)
 
         for interval in range(100):
             if await self._table_exists(dataset_id, table_id):
-                time.sleep(5)
+                # 테이블 생성 직후에는 약간의 전파 시간이 필요할 수 있음
+                if interval > 0:
+                    time.sleep(1) 
+                
                 try:
-                    success = await self._insert_rows(table_address, rows)
+                    # _insert_rows에 스키마와 쓰기 방식을 함께 전달
+                    success = await self._insert_rows(table_address, rows, schema=schema, write_disposition=write_disposition)
                     if success:
                         return {
                             "status": "success",
                             "message": f"Successfully inserted {len(rows)} rows",
                         }
                 except Exception as e:
+                    logger.error(f"Error inserting rows: {str(e)}")
                     raise Exception(f"BigQuery 데이터 삽입 실패: {str(e)}")
 
             time.sleep(0.3)

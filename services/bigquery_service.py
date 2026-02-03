@@ -83,7 +83,7 @@ class BigQueryReportService:
         await self.client.create_dataset(data_set_name)
 
         for table_name, data in reports_data.items():
-
+            logger.info(table_name)
             # 테이블명에서 스키마명 추출 (prefix 기반)
             if table_name.startswith("GA4"):
                 schema_name = "GA4"
@@ -140,7 +140,7 @@ class BigQueryReportService:
 
         return result
     
-    async def insert_daynamic_schema_without_date(self, data_set_name: str, reports_data: dict) -> dict:
+    async def insert_daynamic_schema_without_date(self, data_set_name: str, reports_data: dict, truncate=False) -> dict:
         """동적 스키마를 가진 데이터를 BigQuery에 삽입 / 날짜 정보 없음"""
         result = {}
 
@@ -148,7 +148,13 @@ class BigQueryReportService:
 
         for table_name, data in reports_data.items():
             # 테이블명에서 스키마명 추출 (prefix 기반)
-            if "dmp" in table_name:
+            if table_name.startswith("GA4"):
+                schema_name = "GA4"
+
+            elif table_name.startswith("GOOGLE_ADS"):
+                schema_name = "GOOGLE_ADS"
+
+            elif "dmp" in table_name:
                 schema_name = "DMP"
 
             else:
@@ -164,7 +170,7 @@ class BigQueryReportService:
                     if len(schema) == 0:
                         raise Exception(f"생성된 BigQuery 스키마가 없습니다")
 
-                    await self.client.insert_start(data_set_name, table_name, schema, data)
+                    await self.client.insert_start(data_set_name, table_name, schema, data, truncate)
                     result[table_name] = True
                     logger.info(f"{table_name} 데이터 BigQuery 삽입 완료")
 

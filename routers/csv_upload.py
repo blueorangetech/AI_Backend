@@ -2,7 +2,8 @@ from fastapi import APIRouter, UploadFile, File, Form, status, HTTPException, Re
 from fastapi.responses import JSONResponse, Response
 from services.csv_service import CSVService
 from auth.google_auth_manager import get_bigquery_client, get_gcs_client
-from models.bigquery_schemas import imweb_inner_data_schema
+from models.bigquery_schemas import imweb_inner_data_schema, hanssem_insight_schema
+from services.data_processor import DataProcessor
 from typing import Optional
 import logging
 import json
@@ -124,7 +125,54 @@ async def process_uploaded_file(blob_name: str = Form(...)):
 
     except Exception as e:
         logger.error(f"GCS 파일 처리 실패: {str(e)}")
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"GCS 파일 처리 실패: {str(e)}"
+        )
+
+@router.post("/upload/direct")
+async def upload_file_direct(
+    file: UploadFile = File(...),
+    dataset_id: str = Form(...),
+    table_id: str = Form(...),
+    truncate: bool = Form(True)
+):
+    """
+    클라이언트로부터 파일을 직접 받아 BigQuery에 저장 (GCS 경유 안 함)
+    CSV, XLSX 지원
+    """
+    try:
+        logger.info(f"직접 업로드 요청 시작: {file.filename} (Target: {dataset_id}.{table_id})")
+        
+        # 파일 내용 읽기
+        content = await file.read()
+        
+        # 서비스 초기화
+        bigquery_client = get_bigquery_client()
+        csv_service = CSVService(bigquery_client)
+
+        # 스키마 불러오기
+        hanssem_schema = hanssem_insight_schema()
+        
+        # 직접 업로드 실행
+        result = await csv_service.upload_file_direct(
+            dataset_id=dataset_id,
+            table_id=table_id,
+            file_content=content,
+            filename=file.filename,
+            schema=hanssem_schema,
+            truncate=truncate,
+            processor_func=DataProcessor.process_hanssem_report
+        )
+        
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=result
+        )
+
+    except Exception as e:
+        logger.error(f"직접 업로드 실패: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"업로드 처리 실패: {str(e)}"
         )

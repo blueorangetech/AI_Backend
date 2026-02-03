@@ -41,7 +41,8 @@ bo_customers = {
                             "metrics.cost_micros",
                             "metrics.video_views",
                             ],
-                        "view_level": "From ad_group_ad",
+                        "view_level": "FROM ad_group_ad",
+                        "conditions": "WHERE segments.date DURING YESTERDAY AND metrics.impressions > 0"
                     },
                     "campaign":{
                         "fields": [
@@ -52,7 +53,8 @@ bo_customers = {
                             "metrics.cost_micros",
                             "metrics.video_views",
                         ],
-                        "view_level": "From campaign",
+                        "view_level": "FROM campaign",
+                        "conditions": "WHERE segments.date DURING YESTERDAY AND metrics.impressions > 0"
                     },
                     "keyword": {
                         "fields": [
@@ -64,7 +66,8 @@ bo_customers = {
                             "metrics.cost_micros",
 
                         ],
-                        "view_level": "From keyword_view",
+                        "view_level": "FROM keyword_view",
+                        "conditions": "WHERE segments.date DURING YESTERDAY AND metrics.impressions > 0"
                     }
                 }
             },
@@ -74,17 +77,17 @@ bo_customers = {
                     "total": {
                         "default": [
                             "date", "sessionCampaignName", 
-                            "sessionMedium", "sessionSource", "customEvent:site_url",
-                            "customUser:user_id_dimension", "customEvent:site_code", "eventName"
+                            "sessionMedium", "sessionSource", "sessionManualAdContent", 
+                            "customEvent:site_url", "customUser:user_id_dimension", 
+                            "customEvent:site_code", "eventName"
                                 ],
                             "metric":["eventCount"],
                             "filter":["join", "sign_up", "join_complete_landing", "FreeTrial", "purchase"],
                         },
                     "total_users": {
                         "default": [
-                            "date", "campaignName", 
-                            "medium", "source", "customEvent:site_url",
-                            "customUser:user_id_dimension", "customEvent:site_code", "eventName"
+                            "date", "campaignName", "medium", "source", "ManualAdContent",
+                            "customEvent:site_url", "customUser:user_id_dimension", "customEvent:site_code", "eventName"
                                 ],
                             "metric":["keyEvents"],
                             "filter":["join", "sign_up", "join_complete_landing", "FreeTrial", "purchase"],
@@ -137,6 +140,61 @@ bo_customers = {
                       },
         }
     },
+    "hanssem_hf": {
+        "data_set_name": "hanssem_hf",
+        "media_list": {
+            "google_ads": {
+                "customer_id": "3192418383",
+                "fields": {
+                    "convert_map": {
+                        "fields": [
+                            "conversion_action.resource_name", 
+                            "conversion_action.name"
+                        ],
+                        "view_level": "FROM conversion_action"
+                    },
+                    "asset_convert": {
+                        "fields": [
+                            "segments.date",
+                            "asset.id",
+                            "asset.name",
+                            "asset.type",
+                            "asset.image_asset.full_size.url",
+                            "asset.youtube_video_asset.youtube_video_id",
+                            "ad_group_ad_asset_view.field_type",
+                            "ad_group_ad_asset_view.performance_label",
+                            "segments.conversion_action",
+                            "metrics.conversions",
+                            "metrics.all_conversions",
+                            "campaign.name",
+                            "ad_group.name"
+                        ],
+                        "view_level": "FROM ad_group_ad_asset_view",
+                        "conditions": "WHERE segments.date DURING YESTERDAY AND metrics.conversions > 0 AND campaign.advertising_channel_type = 'MULTI_CHANNEL'"
+                    },
+                    "asset": {
+                        "fields": [
+                            "segments.date",
+                            "asset.id",
+                            "asset.name",
+                            "asset.type",
+                            "ad_group_ad_asset_view.field_type",
+                            "asset.image_asset.full_size.width_pixels",
+                            "asset.image_asset.full_size.height_pixels",
+                            "ad_group_ad_asset_view.performance_label",
+                            "metrics.impressions",
+                            "metrics.clicks",
+                            "metrics.cost_micros",
+                            "campaign.name",
+                            "ad_group.name"
+                        ],
+                        "view_level": "FROM ad_group_ad_asset_view",
+                        "conditions": "WHERE segments.date DURING YESTERDAY AND metrics.impressions > 0 AND campaign.advertising_channel_type = 'MULTI_CHANNEL'"
+                    }
+                }
+            }
+        }
+    },
     "speed_mate": {
         "data_set_name": "speed_mate",
         "media_list": {
@@ -157,7 +215,8 @@ bo_customers = {
                             "metrics.clicks",
                             "metrics.cost_micros",
                         ],
-                        "view_level": "From ad_group_ad",
+                        "view_level": "FROM ad_group_ad",
+                        "conditions": "WHERE segments.date DURING YESTERDAY AND metrics.impressions > 0"
                     }
                 },
             },
@@ -239,7 +298,8 @@ bo_customers = {
                     "metrics.cost_micros",
                     "metrics.conversions",
                 ],
-                "view_level": "From ad_group_ad",
+                "view_level": "FROM ad_group_ad",
+                "conditions": "WHERE segments.date DURING YESTERDAY AND metrics.impressions > 0"
             },
             "meta": {
                 "account_id":"1223120648245224",
