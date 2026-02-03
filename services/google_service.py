@@ -13,8 +13,9 @@ class GoogleAdsReportServices:
         logger.info(data)
         fields = data.get("fields")
         view_level = data.get("view_level")
+        conditions = data.get("conditions", "")
 
-        response = self.client.create_report(fields, view_level)
+        response = self.client.create_report(fields, view_level, conditions)
 
         reports = []
         for row in response:
