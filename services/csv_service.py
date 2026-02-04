@@ -2,7 +2,7 @@ import pandas as pd
 import logging, re
 from typing import Optional
 from io import StringIO, BytesIO
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Callable
 from google.cloud import bigquery
 
 logger = logging.getLogger(__name__)
@@ -183,7 +183,7 @@ class CSVService:
         filename: str,
         schema: Optional[List] = None,
         truncate: bool = True,
-        processor_func: Optional[callable] = None
+        processor_func: Optional[Callable] = None
     ) -> Dict[str, Any]:
         """
         파일을 서버에서 직접 BigQuery로 업로드 (GCS 경유 안 함)
@@ -293,12 +293,12 @@ class CSVService:
 
             # 2. pandas DataFrame으로 변환
             logger.info(f"CSV 파일을 DataFrame으로 변환 중...")
-            df = pd.read_csv(io.BytesIO(file_content))
+            df = pd.read_csv(BytesIO(file_content))
             
             # 데이터 가공 로직 적용
-            if processor_func:
-                logger.info("데이터 가공 로직 적용 중...")
-                df = processor_func(df)
+            # if processor_func:
+            #     logger.info("데이터 가공 로직 적용 중...")
+            #     df = processor_func(df)
                 
             logger.info(f"원본 데이터: {len(df)}행, {len(df.columns)}열")
 

@@ -4,9 +4,7 @@ from services.csv_service import CSVService
 from auth.google_auth_manager import get_bigquery_client, get_gcs_client
 from models.bigquery_schemas import imweb_inner_data_schema, hanssem_insight_schema
 from services.data_processor import DataProcessor
-from typing import Optional
 import logging
-import json
 import os
 
 logger = logging.getLogger(__name__)
@@ -127,7 +125,7 @@ async def process_uploaded_file(blob_name: str = Form(...)):
         logger.error(f"GCS 파일 처리 실패: {str(e)}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"GCS 파일 처리 실패: {str(e)}"
+            content={"detail": f"GCS 파일 처리 실패: {str(e)}"}
         )
 
 @router.post("/upload/direct")
@@ -159,7 +157,7 @@ async def upload_file_direct(
             dataset_id=dataset_id,
             table_id=table_id,
             file_content=content,
-            filename=file.filename,
+            filename=file.filename or "unknown_file",
             schema=hanssem_schema,
             truncate=truncate,
             processor_func=DataProcessor.process_hanssem_report
