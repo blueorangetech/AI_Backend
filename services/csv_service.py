@@ -15,90 +15,13 @@ class CSVService:
         self.bigquery_client = bigquery_client
         self.gcs_client = gcs_client
 
-    async def upload_csv_stream_via_gcs_to_bigquery(
-        self,
-        dataset_id: str,
-        table_id: str,
-        file_obj,
-        filename: str,
-        schema: Optional[List] = None,
-        truncate: bool = True,
-        validate_columns: bool = False
-    ) -> Dict[str, Any]:
-        """
-        CSV 파일을 스트리밍 방식으로 GCS에 업로드 후 BigQuery 테이블에 로드
-        매우 큰 파일에 적합 (메모리 효율적)
-
-        Args:
-            dataset_id: BigQuery 데이터셋 ID
-            table_id: BigQuery 테이블 ID
-            file_obj: 파일 객체 (file-like object)
-            filename: 원본 파일명
-            schema: BigQuery 스키마 (선택, 없으면 자동 생성)
-            truncate: True이면 기존 데이터 삭제 후 삽입
-            validate_columns: 컬럼 검증 여부 (큰 파일에서는 False 권장)
-
-        Returns:
-            Dict: 업로드 결과
-        """
-        if not self.gcs_client:
-            raise Exception("GCS 클라이언트가 설정되지 않았습니다")
-
-        gcs_uri = None
-        blob_name = None
-
-        try:
-            # 1. GCS에 파일 스트리밍 업로드 (메모리에 로드하지 않음)
-            logger.info(f"GCS에 파일 스트리밍 업로드 시작...")
-            blob_name = self.gcs_client.generate_blob_name(dataset_id, table_id, filename)
-            gcs_uri = await self.gcs_client.upload_file_stream(file_obj, blob_name)
-            
-            # 2. 데이터셋 생성 (없으면)
-            logger.info(f"데이터셋 확인/생성: {dataset_id}")
-            await self.bigquery_client.create_dataset(dataset_id)
-
-            # 3. 테이블 truncate (옵션)
-            if truncate:
-                logger.info(f"테이블 truncate: {dataset_id}.{table_id}")
-                await self.bigquery_client.truncate_table(dataset_id, table_id)
-
-            # 4. GCS에서 BigQuery로 로드
-            logger.info(f"GCS에서 BigQuery로 데이터 로드 시작: {gcs_uri}")
-            await self._load_from_gcs_to_bigquery(
-                dataset_id=dataset_id,
-                table_id=table_id,
-                gcs_uri=gcs_uri,
-                schema=schema
-            )
-
-            # 5. GCS 파일 삭제 (선택적)
-            logger.info(f"GCS 임시 파일 삭제: {gcs_uri}")
-            await self.gcs_client.delete_file(blob_name)
-
-            logger.info(f"CSV 스트리밍 업로드 완료: {dataset_id}.{table_id}")
-
-            return {
-                "status": "success",
-                "message": f"CSV 파일 스트리밍 업로드 완료",
-                "gcs_uri": gcs_uri
-            }
-
-        except Exception as e:
-            logger.error(f"CSV 스트리밍 업로드 실패: {str(e)}")
-            # 오류 발생 시 GCS 파일 정리
-            if blob_name:
-                try:
-                    await self.gcs_client.delete_file(blob_name)
-                except:
-                    pass
-            raise Exception(f"CSV 스트리밍 업로드 실패: {str(e)}")
-
     async def _load_from_gcs_to_bigquery(
         self,
         dataset_id: str,
         table_id: str,
         gcs_uri: str,
-        schema: Optional[List] = None
+        schema: Optional[List] = None,
+        truncate: bool = False
     ):
         """
         GCS에서 BigQuery로 데이터 로드
@@ -108,6 +31,7 @@ class CSVService:
             table_id: BigQuery 테이블 ID
             gcs_uri: GCS URI (gs://bucket/path)
             schema: BigQuery 스키마
+            truncate: 기존 데이터 삭제 여부
         """
         try:
             client = await self.bigquery_client._get_client()
@@ -120,12 +44,19 @@ class CSVService:
                 else:
                     raise Exception("테이블이 존재하지 않으며 스키마가 제공되지 않았습니다")
 
+            # write_disposition 설정
+            write_disposition = (
+                bigquery.WriteDisposition.WRITE_TRUNCATE 
+                if truncate 
+                else bigquery.WriteDisposition.WRITE_APPEND
+            )
+
             # 로드 작업 설정
             job_config = bigquery.LoadJobConfig(
                 source_format=bigquery.SourceFormat.CSV,
                 skip_leading_rows=1,  # 헤더 스킵
                 autodetect=False if schema else True,  # 스키마가 있으면 자동 감지 비활성화
-                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+                write_disposition=write_disposition,
                 max_bad_records=0,  # 오류 허용 안 함
                 allow_quoted_newlines=True,  # CSV 내 줄바꿈 허용
                 allow_jagged_rows=False,  # 불규칙한 행 허용 안 함
@@ -146,34 +77,6 @@ class CSVService:
         except Exception as e:
             logger.error(f"GCS에서 BigQuery 로드 실패: {str(e)}")
             raise Exception(f"GCS에서 BigQuery 로드 실패: {str(e)}")
-
-    def remove_outliers(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        데이터프레임에서 이상치 제거
-        """
-        # 정상 형식 패턴: YYYY-MM-DDTHH:MM:SS.000+09:00
-        normal_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+\d{2}:\d{2}$'
-
-        # 비정상 형식 행 찾기
-        abnormal_indices = []
-        for idx, value in enumerate(df['site_owner_join_time']):
-            # NaN이 아니고, 정상 패턴에 맞지 않는 경우
-            if pd.notna(value) and not re.match(normal_pattern, str(value)):
-                abnormal_indices.append(idx)
-                print(f"비정상 형식 발견 (행 {idx}): {value}")
-
-        # 비정상 형식 행 제거
-        df = df.drop(abnormal_indices)
-
-        logger.info(f"이상치 제거 전 데이터: {len(df)}행")
-
-        # 예시: 특정 컬럼의 특정 값을 가진 행 제거
-        # df_cleaned = df[df['your_column'] != 'outlier_value']
-        df_cleaned = df.copy()
-
-        logger.info(f"이상치 제거 후 데이터: {len(df_cleaned)}행 (제거된 행: {len(df) - len(df_cleaned)})")
-
-        return df_cleaned
     
     async def upload_file_direct(
         self,
@@ -246,13 +149,14 @@ class CSVService:
             raise Exception(f"BigQuery 직접 업로드 실패: {str(e)}")
 
 
-    async def process_gcs_file_with_outlier_removal(
+    async def gcs_file_to_bigquery(
         self,
         dataset_id: str,
         table_id: str,
         blob_name: str,
         schema: Optional[List] = None,
-        truncate: bool = True
+        truncate: bool = True,
+        processor_func: Optional[Callable] = None
     ) -> Dict[str, Any]:
         """
         GCS에 이미 업로드된 CSV 파일을 처리하여 BigQuery에 로드
@@ -295,20 +199,18 @@ class CSVService:
             logger.info(f"CSV 파일을 DataFrame으로 변환 중...")
             df = pd.read_csv(BytesIO(file_content))
             
-            # 데이터 가공 로직 적용
-            # if processor_func:
-            #     logger.info("데이터 가공 로직 적용 중...")
-            #     df = processor_func(df)
-                
-            logger.info(f"원본 데이터: {len(df)}행, {len(df.columns)}열")
-
-            # 3. 이상치 제거 (기본 로직 유지)
-            logger.info(f"이상치 제거 로직 적용 중...")
-            df_cleaned = self.remove_outliers(df)
-
             # 행 수 저장 (메모리 정리 전)
             original_rows = len(df)
-            cleaned_rows = len(df_cleaned)
+
+            # 3. 데이터 가공 로직 적용 (이상치 제거)
+            if processor_func:
+                logger.info("데이터 가공 로직 적용 중...")
+                df = processor_func(df)
+                
+            logger.info(f"원본 데이터: {len(df)}행, {len(df.columns)}열")
+            
+            # 행 수 저장 (메모리 정리 후)
+            cleaned_rows = len(df)
 
             # 4. GCS 원본 파일 삭제
             logger.info(f"GCS 원본 파일 삭제: {blob_name}")
@@ -318,20 +220,14 @@ class CSVService:
             logger.info(f"데이터셋 확인/생성: {dataset_id}")
             await self.bigquery_client.create_dataset(dataset_id)
 
-            # 6. 테이블 truncate (옵션)
-            if truncate:
-                logger.info(f"테이블 truncate: {dataset_id}.{table_id}")
-                await self.bigquery_client.truncate_table(dataset_id, table_id)
-
             # 7. 정제된 데이터를 CSV로 변환하여 GCS에 업로드 (메모리 효율적)
             logger.info(f"정제된 데이터를 CSV로 변환 중...")
             csv_buffer = StringIO()
-            df_cleaned.to_csv(csv_buffer, index=False)
+            df.to_csv(csv_buffer, index=False)
             cleaned_csv_bytes = csv_buffer.getvalue().encode('utf-8')
 
             # 메모리 정리
             del df
-            del df_cleaned
             del csv_buffer
 
             # 정제된 CSV를 GCS에 업로드
@@ -350,7 +246,8 @@ class CSVService:
                 dataset_id=dataset_id,
                 table_id=table_id,
                 gcs_uri=cleaned_gcs_uri,
-                schema=schema
+                schema=schema,
+                truncate=truncate
             )
 
             # 9. GCS 정제된 파일 삭제

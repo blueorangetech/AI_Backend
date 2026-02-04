@@ -108,12 +108,13 @@ async def process_uploaded_file(blob_name: str = Form(...)):
         schema = imweb_inner_data_schema()
 
         # GCS에서 파일 처리
-        result = await csv_service.process_gcs_file_with_outlier_removal(
+        result = await csv_service.gcs_file_to_bigquery(
             dataset_id=DATASET_ID,
             table_id=TABLE_ID,
             blob_name=blob_name,
             schema=schema,
-            truncate=True
+            truncate=True,
+            processor_func=DataProcessor.process_imweb_inner_data
         )
 
         return JSONResponse(

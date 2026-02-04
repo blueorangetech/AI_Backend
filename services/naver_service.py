@@ -147,8 +147,8 @@ class NaverReportService:
             
             # 해당 스키마의 INTEGER 필드 찾기
             if key in schema_map:
-                integer_fields = [field.name for field in schema_map[key] 
-                                if field.field_type == 'INTEGER']
+                integer_fields = [k for k, v in schema_map[key].items() 
+                                if v == 'INTEGER']
                 
                 # INTEGER 필드를 정수로 변환
                 for col in integer_fields:
