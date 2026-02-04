@@ -3,78 +3,82 @@ from google.cloud import bigquery
 
 def naver_search_ad_schema():
     """네이버 검색광고 BigQuery 테이블 스키마"""
-    return [
-        bigquery.SchemaField("date", "DATE"),
-        bigquery.SchemaField("campaignName", "STRING"),
-        bigquery.SchemaField("campaignID", "STRING"),
-        bigquery.SchemaField("adGroupName", "STRING"),
-        bigquery.SchemaField("adGroupID", "STRING"),
-        bigquery.SchemaField("adKeyword", "STRING"),
-        bigquery.SchemaField("adKeywordID", "STRING"),
-        bigquery.SchemaField("adID", "STRING"),
-        bigquery.SchemaField("pcMobileType", "STRING"),
-        bigquery.SchemaField("impressions", "INTEGER"),
-        bigquery.SchemaField("clicks", "INTEGER"),
-        bigquery.SchemaField("cost", "FLOAT"),
-        bigquery.SchemaField("sumofADrank", "FLOAT"),
-    ]
+    FIELD_TYPE_MAP = {
+        "date": "DATE",
+        "campaignName": "STRING",
+        "campaignID": "STRING",
+        "adGroupName": "STRING",
+        "adGroupID": "STRING",
+        "adKeyword": "STRING",
+        "adKeywordID": "STRING",
+        "adID": "STRING",
+        "pcMobileType": "STRING",
+        "impressions": "INTEGER",
+        "clicks": "INTEGER",
+        "cost": "FLOAT",
+        "sumofADrank": "FLOAT",
+    }
+    return FIELD_TYPE_MAP
 
 
 def naver_search_ad_cov_schema():
     """네이버 검색광고 전환 BigQuery 테이블 스키마"""
-    return [
-        bigquery.SchemaField("date", "DATE"),
-        bigquery.SchemaField("campaignName", "STRING"),
-        bigquery.SchemaField("campaignID", "STRING"),
-        bigquery.SchemaField("adGroupName", "STRING"),
-        bigquery.SchemaField("adGroupID", "STRING"),
-        bigquery.SchemaField("adKeyword", "STRING"),
-        bigquery.SchemaField("adKeywordID", "STRING"),
-        bigquery.SchemaField("adID", "STRING"),
-        bigquery.SchemaField("pcMobileType", "STRING"),
-        bigquery.SchemaField("conversionType", "STRING"),
-        bigquery.SchemaField("conversionCount", "FLOAT"),
-        bigquery.SchemaField("salesByConversion", "INTEGER"),
-    ]
+    FIELD_TYPE_MAP = {
+        "date": "DATE",
+        "campaignName": "STRING",
+        "campaignID": "STRING",
+        "adGroupName": "STRING",
+        "adGroupID": "STRING",
+        "adKeyword": "STRING",
+        "adKeywordID": "STRING",
+        "adID": "STRING",
+        "pcMobileType": "STRING",
+        "conversionType": "STRING",
+        "conversionCount": "FLOAT",
+        "salesByConversion": "INTEGER",
+    }
+    return FIELD_TYPE_MAP
 
 def naver_shopping_ad_schema():
     """네이버 쇼핑광고 BigQuery 테이블 스키마"""
-    return [
-        bigquery.SchemaField("date", "DATE"),
-        bigquery.SchemaField("campaignID", "STRING"),
-        bigquery.SchemaField("campaignName", "STRING"),
-        bigquery.SchemaField("adGroupID", "STRING"),
-        bigquery.SchemaField("adGroupName", "STRING"),
-        bigquery.SchemaField("searchKeyword", "STRING"),
-        bigquery.SchemaField("adID", "STRING"),
-        bigquery.SchemaField("productName", "STRING"),
-        bigquery.SchemaField("productID", "STRING"),
-        bigquery.SchemaField("productIDofMall", "STRING"),
-        bigquery.SchemaField("pcMobileType", "STRING"),
-        bigquery.SchemaField("impressions", "INTEGER"),
-        bigquery.SchemaField("clicks", "INTEGER"),
-        bigquery.SchemaField("cost", "FLOAT"),
-        bigquery.SchemaField("sumofADrank", "FLOAT"),
-    ]
+    FIELD_TYPE_MAP = {
+        "date": "DATE",
+        "campaignID": "STRING",
+        "campaignName": "STRING",
+        "adGroupID": "STRING",
+        "adGroupName": "STRING",
+        "searchKeyword": "STRING",
+        "adID": "STRING",
+        "productName": "STRING",
+        "productID": "STRING",
+        "productIDofMall": "STRING",
+        "pcMobileType": "STRING",
+        "impressions": "INTEGER",
+        "clicks": "INTEGER",
+        "cost": "FLOAT",
+        "sumofADrank": "FLOAT",
+    }
+    return FIELD_TYPE_MAP
 
 def naver_shopping_ad_cov_schema():
     """네이버 쇼핑광고 전환 BigQuery 테이블 스키마"""
-    return [
-        bigquery.SchemaField("date", "DATE"),
-        bigquery.SchemaField("campaignID", "STRING"),
-        bigquery.SchemaField("campaignName", "STRING"),
-        bigquery.SchemaField("adGroupID", "STRING"),
-        bigquery.SchemaField("adGroupName", "STRING"),
-        bigquery.SchemaField("searchKeyword", "STRING"),
-        bigquery.SchemaField("adID", "STRING"),
-        bigquery.SchemaField("productName", "STRING"),
-        bigquery.SchemaField("productID", "STRING"),
-        bigquery.SchemaField("productIDofMall", "STRING"),
-        bigquery.SchemaField("pcMobileType", "STRING"),
-        bigquery.SchemaField("conversionType", "STRING"),
-        bigquery.SchemaField("conversionCount", "FLOAT"),
-        bigquery.SchemaField("salesByConversion", "INTEGER"),
-    ]
+    FIELD_TYPE_MAP = {
+        "date": "DATE",
+        "campaignID": "STRING",
+        "campaignName": "STRING",
+        "adGroupID": "STRING",
+        "adGroupName": "STRING",
+        "searchKeyword": "STRING",
+        "adID" : "STRING",
+        "productName": "STRING",
+        "productID": "STRING",
+        "productIDofMall": "STRING",
+        "pcMobileType": "STRING",
+        "conversionType": "STRING",
+        "conversionCount": "FLOAT",
+        "salesByConversion": "INTEGER"
+    }
+    return FIELD_TYPE_MAP
 
 def naver_gfa_schema():
     """네이버 GFA BigQuery 테이블 스키마"""

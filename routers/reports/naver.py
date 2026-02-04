@@ -34,7 +34,7 @@ async def create_naver_reports(request: MediaRequestModel):
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
 
-        result = await bigquery_service.insert_static_schema(data_set_name, response)
+        result = await bigquery_service.insert_daynamic_schema(data_set_name, response)
 
         return result
 

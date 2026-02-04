@@ -1,5 +1,5 @@
 import pandas as pd
-import logging
+import logging, re
 from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,37 @@ class DataProcessor:
         logger.info(f"Hanssem 데이터 가공 및 압축 완료: {len(processed_df)}행 (UTM 분리 및 그룹화 완료)")
         return processed_df
 
+    @staticmethod
+    def process_imweb_inner_data(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        imweb 내부 데이터 가공 로직
+        데이터프레임에서 이상치 제거
+        """
+
+         # 정상 형식 패턴: YYYY-MM-DDTHH:MM:SS.000+09:00
+        normal_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+\d{2}:\d{2}$'
+
+        # 비정상 형식 행 찾기
+        abnormal_indices = []
+        for idx, value in enumerate(df['site_owner_join_time']):
+            # NaN이 아니고, 정상 패턴에 맞지 않는 경우
+            if pd.notna(value) and not re.match(normal_pattern, str(value)):
+                abnormal_indices.append(idx)
+                print(f"비정상 형식 발견 (행 {idx}): {value}")
+
+        # 비정상 형식 행 제거
+        df = df.drop(abnormal_indices)
+
+        logger.info(f"이상치 제거 전 데이터: {len(df)}행")
+
+        # 예시: 특정 컬럼의 특정 값을 가진 행 제거
+        # df_cleaned = df[df['your_column'] != 'outlier_value']
+        df_cleaned = df.copy()
+
+        logger.info(f"이상치 제거 후 데이터: {len(df_cleaned)}행 (제거된 행: {len(df) - len(df_cleaned)})")
+
+        return df_cleaned
+    
     @staticmethod
     def process_default(df: pd.DataFrame) -> pd.DataFrame:
         """기본 가공 로직 (필요시)"""

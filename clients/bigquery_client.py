@@ -372,7 +372,7 @@ class BigQueryClient:
             logger.error(f"Failed to query data: {str(e)}")
             raise Exception(f"BigQuery 데이터 조회 실패: {str(e)}")
 
-    async def query_data_by_date(self, dataset_id, table_id, start_date, end_date):
+    async def query_data_by_date(self, dataset_id, table_id, start_date, end_date, limit, offset):
         """특정 테이블의 특정 날짜 데이터를 조회"""
         try:
             client = await self._get_client()
@@ -380,7 +380,12 @@ class BigQueryClient:
             SELECT *
             FROM `{client.project}.{dataset_id}.{table_id}`
             WHERE date BETWEEN DATE('{start_date}') AND DATE('{end_date}')
+            ORDER BY date ASC
             """
+
+            if limit is not None:
+                query += f"LIMIT {limit} OFFSET {offset}"
+
             query_job = client.query(query)
             results = query_job.result()
             

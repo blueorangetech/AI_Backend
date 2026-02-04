@@ -30,12 +30,14 @@ async def get_data_by_date(
     dataset_id: str, 
     table_id: str, 
     start_date: str, 
-    end_date: str
+    end_date: str,
+    limit: Optional[int] = None,
+    offset: int = 0
 ):
     """특정 날짜 범위의 데이터를 조회"""
     try:
         service = get_bq_service()
-        result = await service.get_data_by_date(dataset_id, table_id, start_date, end_date)
+        result = await service.get_data_by_date(dataset_id, table_id, start_date, end_date, limit, offset)
         return {'status': 'success', 'data': result}
     
     except Exception as e:

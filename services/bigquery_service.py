@@ -1,3 +1,4 @@
+from typing import Optional
 from google.cloud import bigquery
 from models.bigquery_schemas import (
     naver_search_ad_schema,
@@ -99,7 +100,12 @@ class BigQueryReportService:
 
             basic_schema = self.config[schema_name]
 
-            schema = self._create_schema(basic_schema, data)
+            # 기존 테이블 스키마 확인
+            existing_schema = await self.client.get_table_schema(data_set_name, table_name)
+            if isinstance(existing_schema, str): # 에러 메시지(문자열)가 반환된 경우 (테이블 없음 등)
+                existing_schema = None
+
+            schema = self._create_schema(basic_schema, data, existing_schema)
             result[table_name] = False
 
             if data:  # 데이터가 있으면
@@ -162,7 +168,12 @@ class BigQueryReportService:
 
             basic_schema = self.config[schema_name]
 
-            schema = self._create_schema(basic_schema, data)
+            # 기존 테이블 스키마 확인
+            existing_schema = await self.client.get_table_schema(data_set_name, table_name)
+            if isinstance(existing_schema, str):
+                existing_schema = None
+
+            schema = self._create_schema(basic_schema, data, existing_schema)
             result[table_name] = False
 
             if data:  # 데이터가 있으면
@@ -182,13 +193,22 @@ class BigQueryReportService:
 
         return result
     
-    def _create_schema(self, basic_schema: dict, data: list):
+    def _create_schema(self, basic_schema: dict, data: list, existing_schema=None):
         if not data:
             return []
 
         schema_fields = []
+        
+        # 기존 필드 이름 목록 추출
+        existing_field_names = None
+        if existing_schema and not isinstance(existing_schema, str):
+            existing_field_names = [field.name for field in existing_schema]
 
         for key in data[0]:
+            # 기존 테이블이 존재한다면, 테이블에 이미 있는 필드만 스키마에 포함
+            if existing_field_names is not None and key not in existing_field_names:
+                continue
+
             if key in basic_schema:
                 data_type = basic_schema[key]
                 schema_fields.append(bigquery.SchemaField(key, data_type))
@@ -227,10 +247,10 @@ class BigQueryReportService:
             raise e
 
     async def get_data_by_date(self, dataset_id: str, table_id: str, 
-                               start_date: str, end_date: str):
+                               start_date: str, end_date: str, limit: Optional[int]  = None, offset: int = 0):
         """특정 테이블의 특정 날짜 데이터를 조회"""
         try:
-            data = await self.client.query_data_by_date(dataset_id, table_id, start_date, end_date)
+            data = await self.client.query_data_by_date(dataset_id, table_id, start_date, end_date, limit, offset)
             result = []
             
             # 결과를 딕셔너리 리스트로 변환
