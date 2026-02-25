@@ -106,6 +106,11 @@ class CSVService:
             
             if filename.lower().endswith('.csv'):
                 df = pd.read_csv(BytesIO(file_content))
+            elif filename.endswith('.xlsb'):
+                # xlsb는 반드시 엔진 명시 (pip install pyxlsb 필요)
+                df = pd.read_excel(BytesIO(file_content), engine='pyxlsb')
+                df['date'] = pd.to_datetime(df['date'], unit='D', origin='1899-12-30')
+
             elif filename.lower().endswith(('.xlsx', '.xls')):
                 df = pd.read_excel(BytesIO(file_content))
             else:

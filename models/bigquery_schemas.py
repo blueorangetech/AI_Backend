@@ -267,6 +267,7 @@ def hanssem_insight_schema():
         bigquery.SchemaField("utm_content_5", "STRING"),
         bigquery.SchemaField("utm_content_6", "STRING"),
         bigquery.SchemaField("utm_content_7", "STRING"),
+        bigquery.SchemaField("utm_content_8", "STRING"),
         bigquery.SchemaField("impressions", "INTEGER"),
         bigquery.SchemaField("clicks", "INTEGER"),
         bigquery.SchemaField("cost", "FLOAT"),

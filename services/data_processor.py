@@ -49,7 +49,7 @@ class DataProcessor:
             split_series = processed_df['utm_content'].fillna('').astype(str).str.split('_')
             
             # 최대 7개까지 분리하여 필드 생성 (실제 데이터 구조에 따라 조정 가능)
-            for i in range(7):
+            for i in range(8):
                 processed_df[f'utm_content_{i+1}'] = split_series.str[i]
                 group_keys.append(f'utm_content_{i+1}')
 

@@ -24,7 +24,8 @@ class BoCustomerQuery:
                     "SUM(distribution) AS distribution",
                     "SAFE_DIVIDE(SUM(clicks), SUM(impressions)) * 100 AS ctr",
                     "SAFE_DIVIDE(SUM(cost), SUM(clicks)) AS cpc",
-                    "SAFE_DIVIDE(SUM(distribution),SUM(consultation)) * 100 AS cvr",
+                    "SAFE_DIVIDE(SUM(distribution),SUM(clicks)) * 100 AS cvr",
+                    "SAFE_DIVIDE(SUM(distribution),SUM(consultation)) * 100 AS distribution_cvr",
                     "SAFE_DIVIDE(SUM(cost), SUM(distribution)) AS cpa"
                     ],
 
