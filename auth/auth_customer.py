@@ -44,5 +44,5 @@ class LoginAuthManger:
 
         else:
             logger.info(f"Customer {name} is not existed, Create {name}...")
-            await self.store_customer(name, "1111")
+            await self.store_customer(name, password)
             return True
