@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from models.media_request_models import MediaRequestModel
 from services.google_service import GoogleAdsReportServices
 from services.ga4_service import GA4ReportServices
-from services.bigquery_service import BigQueryReportService
+from services.bigquery_insert_service import BigQueryReportService
 from auth.google_auth_manager import get_google_ads_client, get_ga4_client, get_bigquery_client
 from configs.customers_event import bo_customers
 import logging

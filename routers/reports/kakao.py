@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from models.media_request_models import MediaRequestModel
 from services.kakao_service import KakaoReportService
 from auth.kakao_token_manager import KakaoTokenManager
-from services.bigquery_service import BigQueryReportService
+from services.bigquery_insert_service import BigQueryReportService
 from auth.google_auth_manager import get_bigquery_client
 from configs.customers_event import bo_customers
 import logging

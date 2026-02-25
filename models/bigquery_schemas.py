@@ -270,7 +270,8 @@ def hanssem_insight_schema():
         bigquery.SchemaField("impressions", "INTEGER"),
         bigquery.SchemaField("clicks", "INTEGER"),
         bigquery.SchemaField("cost", "FLOAT"),
-        bigquery.SchemaField("consultation_requests", "INTEGER"),
+        bigquery.SchemaField("consultation", "INTEGER"),
+        bigquery.SchemaField("distribution", "INTEGER"),
     ]
 
 def dmp_schema():

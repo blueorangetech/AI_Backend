@@ -24,7 +24,8 @@ class DataProcessor:
             '노출': 'impressions',
             '클릭': 'clicks',
             '소진비용': 'cost',
-            '상담신청': 'consultation_requests',
+            '유입_상담신청': 'consultation',
+            '유입_배분수': 'distribution',
             'UTM_Campaign': 'utm_campaign',
             'UTM_Content': 'utm_content'
         }
@@ -40,7 +41,7 @@ class DataProcessor:
         # 4. 데이터 압축 (Aggregation)
         # 지표 데이터와 전환 데이터가 행으로 분리되어 있으므로, 기준 필드로 그룹화하여 합산합니다.
         group_keys = ['date', 'media', 'utm_campaign', 'utm_content']
-        numeric_fields = ['impressions', 'clicks', 'cost', 'consultation_requests']
+        numeric_fields = ['impressions', 'clicks', 'cost', 'consultation', 'distribution']
         
         # utm_content를 '_' 기준으로 나눠서 새로운 필드 생성
         if 'utm_content' in processed_df.columns:
@@ -57,11 +58,14 @@ class DataProcessor:
         active_numeric_fields = [n for n in numeric_fields if n in processed_df.columns]
         
         # 수치 데이터의 NaN을 0으로 채움 (합산 오류 방지)
-        processed_df[active_numeric_fields] = processed_df[active_numeric_fields].fillna(0)
+        for field in active_numeric_fields:
+            if field in processed_df.columns:
+                # pd.to_numeric을 먼저 써서 '-'를 NaN으로 만들고, fillna(0)로 0을 채웁니다.
+                processed_df[field] = pd.to_numeric(processed_df[field], errors='coerce').fillna(0)
         
         # 5. 데이터 타입 강제 변환 (Excel -> Pandas 로드 시 float으로 변환되는 것 방지)
         # BigQuery INTEGER 타입에 맞게 정수로 변환해야 00.0 형식을 피할 수 있습니다.
-        int_fields = ['impressions', 'clicks', 'consultation_requests']
+        int_fields = ['impressions', 'clicks', 'consultation', 'distribution']
         for field in int_fields:
             if field in processed_df.columns:
                 processed_df[field] = processed_df[field].astype('int64')

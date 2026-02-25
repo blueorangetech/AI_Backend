@@ -1,6 +1,6 @@
 from auth.works_token_manager import WorksTokenManager
 from auth.google_auth_manager import get_bigquery_client
-from services.bigquery_service import BigQueryReportService
+from services.bigquery_insert_service import BigQueryReportService
 from utils.http_client_manager import get_http_client
 from services.works_service import WorksService
 from datetime import datetime, timedelta

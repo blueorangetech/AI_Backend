@@ -4,7 +4,7 @@ from services.naver_service import NaverReportService
 from auth.gfa_token_manager import GFATokenManager
 from services.gfa_service import GFAReportService
 from auth.naver_auth_manager import get_naver_client, get_gfa_client
-from services.bigquery_service import BigQueryReportService
+from services.bigquery_insert_service import BigQueryReportService
 from auth.google_auth_manager import get_bigquery_client
 from configs.customers_event import bo_customers
 import logging
@@ -78,7 +78,7 @@ async def create_gfa_reports(request: MediaRequestModel):
         client = get_gfa_client(access_token, customer_id)
         service = GFAReportService(client)
         response = await service.get_performance_data()
-        return response
+        
         # BigQuery 연결
         bigquery_client = get_bigquery_client()
         bigquery_service = BigQueryReportService(bigquery_client)
