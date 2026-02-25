@@ -31,7 +31,7 @@ class BoCustomerQuery:
 
                 "group_by": ["media", "utm_content", "utm_content_1", "utm_content_2",
                             "utm_content_3", "utm_content_4", "utm_content_5", 
-                            "utm_content_6", "utm_content_7"
+                            "utm_content_6", "utm_content_7", "utm_content_8"
                             ],
                 "order_by": "CASE WHEN cpa = 0 OR cpa IS NULL THEN 1 ELSE 0 END ASC, cpa ASC"
             }
