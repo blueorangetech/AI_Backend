@@ -96,6 +96,18 @@ class BigQueryClient:
             logger.error(f"Failed to execute SQL: {e}")
             return f"Failed to execute SQL: {e}"
     
+    async def execute_bigqeury_with_project(self, query: str):
+        """BigQuery SQL 쿼리 실행"""
+        try:
+            client = await self._get_client()
+            final_query = query.format(project_id=client.project)
+            query_job = client.query(final_query)
+            results = query_job.result()
+            return results
+
+        except Exception as e:
+            logger.error(f"Failed to execute SQL: {e}")
+            return f"Failed to execute SQL: {e}"
 
     async def _create_table(self, dataset_id, table_id, schema):
         client = await self._get_client()

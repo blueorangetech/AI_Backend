@@ -4,7 +4,7 @@ from configs.customers_event import bo_customers
 from clients.tiktok_api_client import TikTokAPIClient
 from services.tiktok_service import TikTokReportService
 from auth.google_auth_manager import get_bigquery_client
-from services.bigquery_service import BigQueryReportService
+from services.bigquery_insert_service import BigQueryReportService
 import logging
 
 logger = logging.getLogger(__name__)

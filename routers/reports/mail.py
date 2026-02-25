@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from models.media_request_models import MediaRequestModel
 from auth.works_token_manager import WorksTokenManager
 from services.works_service import WorksService
-from services.bigquery_service import BigQueryReportService
+from services.bigquery_insert_service import BigQueryReportService
 from auth.google_auth_manager import get_bigquery_client
 from services import send_report
 from datetime import datetime, timedelta

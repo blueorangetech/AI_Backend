@@ -3,7 +3,7 @@ from services.meta_service import MetaAdsReportServices
 from auth.meta_auth_manager import get_meta_ads_client
 from models.media_request_models import MediaRequestModel
 from auth.google_auth_manager import get_bigquery_client
-from services.bigquery_service import BigQueryReportService
+from services.bigquery_insert_service import BigQueryReportService
 from configs.customers_event import bo_customers
 import logging
 

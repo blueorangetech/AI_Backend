@@ -2,7 +2,7 @@ from fastapi import APIRouter, Body
 from pydantic import BaseModel
 from bs4 import BeautifulSoup
 from configs.customers_event import bo_customers
-from services.bigquery_service import BigQueryReportService
+from services.bigquery_insert_service import BigQueryReportService
 from auth.google_auth_manager import get_bigquery_client
 import httpx, logging, os
 

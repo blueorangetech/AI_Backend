@@ -2,7 +2,7 @@ from clients.google_ads_api_client import GoogleAdsAPIClient
 from clients.ga4_api_client import GA4APIClient
 from clients.bigquery_client import BigQueryClient
 from clients.gcs_client import GCSClient
-import os, logging, requests
+import os, logging
 
 logger = logging.getLogger(__name__)
 
