@@ -22,13 +22,14 @@ class LoginAuthManger:
         return bcrypt.checkpw(password.encode("utf-8"), hashed_password)
 
 
-    async def store_customer(self, name, password, access_list=None, is_master=False):
+    async def store_customer(self, user_id, name, password, access_list=None, is_master=False):
         """ 유저 정보 등록 """
         if access_list is None:
             access_list = {}
             
         hashed = await self._hash_password(password)
         customer_data = {
+            "user_id": user_id,
             "name": name, 
             "password": hashed,
             "access_list": access_list,
@@ -36,14 +37,19 @@ class LoginAuthManger:
         }
         collection = await self._get_db()
 
+        # 이미 존재하는 유저인지 확인 (ID 기준)
+        if collection.find_one({"user_id": user_id}):
+            return False
+
         collection.insert_one(customer_data)
-        logger.info(f"New Customer {name} Created (Master: {is_master})")
+        logger.info(f"New Customer {name}({user_id}) Created (Master: {is_master})")
+        return True
 
 
-    async def authenticate(self, name, password):
-        """ 유저 인증 """
+    async def authenticate(self, user_id, password):
+        """ 유저 인증 (ID 기준) """
         collection = await self._get_db()
-        customer = collection.find_one({"name": name})
+        customer = collection.find_one({"user_id": user_id})
         
         error_msg = "아이디 혹은 비밀번호가 일치하지 않습니다."
 
@@ -69,8 +75,8 @@ class LoginAuthManger:
         
         return {"status": False, "message": "해당 페이지에 대한 접근 권한이 없습니다."}
 
-    async def update_customer_privilege(self, name, access_list=None, is_master=None):
-        """ 유저 권한 업데이트 (관리용) """
+    async def update_customer_privilege(self, user_id, access_list=None, is_master=None):
+        """ 유저 권한 업데이트 (ID 기준) """
         collection = await self._get_db()
         update_data = {}
         
@@ -82,5 +88,16 @@ class LoginAuthManger:
         if not update_data:
             return False
             
-        result = collection.update_one({"name": name}, {"$set": update_data})
+        result = collection.update_one({"user_id": user_id}, {"$set": update_data})
         return result.modified_count > 0
+
+    async def get_user_by_id(self, user_id):
+        """ ID로 단일 유저 조회 """
+        collection = await self._get_db()
+        return collection.find_one({"user_id": user_id}, {"password": 0, "_id": 0})
+
+    async def get_all_customers(self):
+        """ 모든 유저 정보 조회 (비밀번호 제외) """
+        collection = await self._get_db()
+        customers = list(collection.find({}, {"password": 0, "_id": 0}))
+        return customers
