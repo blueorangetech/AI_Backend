@@ -115,6 +115,32 @@ class NaverReportService:
 
         return file_path
 
+    async def get_master_data_only(self, master_list: list) -> dict:
+        """마스터 리포트 데이터만 추출 (성과 데이터 조인 없음)"""
+        file_list = []
+        try:
+            results = {}
+            for master in master_list:
+                file_path = await self._create_and_download_master_report(master)
+                report_name = f"{master}_report"
+                header = naver_field_master[report_name]
+                
+                # CSV 읽기 및 간단한 정제
+                df = pd.read_csv(file_path, header=0, names=header, low_memory=False, index_col=False)
+                
+                # 정수형 변환이 필요한 필드 처리 (기이하게 읽히는 경우 방지)
+                for col in df.columns:
+                    if "ID" in col or "Id" in col:
+                        df[col] = df[col].astype(str)
+
+                results[f"NAVER_{master}_INDEX"] = df.to_dict("records")
+                file_list.append(file_path)
+                logger.info(f"{master} 마스터 데이터 추출 완료")
+                
+            return results
+        finally:
+            self._cleanup_files(file_list)
+
     def _merge_reports(self, report_list: list, master_list: list, stat_types: list) -> dict:
         """여러 리포트 파일을 병합하여 하나의 DataFrame으로 만들기"""
         keys = master_list + stat_types

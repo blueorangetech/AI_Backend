@@ -41,6 +41,37 @@ async def create_naver_reports(request: MediaRequestModel):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@router.post("/master")
+async def create_naver_master_reports(request: MediaRequestModel):
+    """네이버 인덱스(마스터) 데이터만 별도로 저장"""
+    try:
+        customer = request.customer
+        customer_info = bo_customers[customer]["media_list"]["naver"] 
+        data_set_name = bo_customers[customer]["data_set_name"]
+
+        customer_id = customer_info["customer_id"]
+        master_list = customer_info["master_list"]
+
+        client = get_naver_client(customer_id)
+        service = NaverReportService(client)
+
+        # 1. 마스터 데이터만 가져오기
+        response = await service.get_master_data_only(master_list)
+        
+        # 2. BigQuery 연결
+        bigquery_client = get_bigquery_client()
+        bigquery_service = BigQueryReportService(bigquery_client)
+
+        # 3. BigQuery에 저장 (기존 데이터 교체 - truncate=True)
+        result = await bigquery_service.insert_daynamic_schema_without_date(
+            data_set_name, response, truncate=True
+        )
+
+        return result
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @router.post("/gfa/budget")
 async def adjust_gfa_budget(request: MediaBudgetRequestModel):
     """GFA 광고 예산 변경"""
