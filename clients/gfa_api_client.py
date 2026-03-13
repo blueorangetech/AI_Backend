@@ -27,7 +27,7 @@ class GFAAPIClient:
                     last_error = f"HTTP {response.status_code}: {response.text}"
                     if attempt < retry - 1:
                         logger.warning(f"Non-200 response ({response.status_code}). Retrying... ({attempt + 1}/{retry})")
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(10)
                         continue
                 elif method.upper() == "POST":
                     response = await client.post(url, headers=headers, json=params)
