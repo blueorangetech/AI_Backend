@@ -231,6 +231,102 @@ def criteo_schema():
     return FIELD_TYPE_MAP
 
 
+def naver_campaign_master_schema():
+    """네이버 캠페인 마스터 BigQuery 테이블 스키마"""
+    return {
+        "customerID": "STRING",
+        "campaignID": "STRING",
+        "campaignName": "STRING",
+        "campaignType": "STRING",
+        "deliveryMethod": "STRING",
+        "usingPeriod": "STRING",
+        "periodStartDate": "STRING",
+        "periodEndDate": "STRING",
+        "regTm": "STRING",
+        "delTm": "STRING",
+        "on_off": "STRING",
+        "sharedBudgetID": "STRING",
+    }
+
+
+def naver_adgroup_master_schema():
+    """네이버 광고그룹 마스터 BigQuery 테이블 스키마"""
+    return {
+        "customerID": "STRING",
+        "adGroupID": "STRING",
+        "campaignID": "STRING",
+        "adGroupName": "STRING",
+        "adGroupBidamount": "INTEGER",
+        "on_off": "STRING",
+        "usingcontentsnetworkbid": "STRING",
+        "contentsnetworkbid": "INTEGER",
+        "pcNetworkBiddingweight": "INTEGER",
+        "mobileNetworkBiddingweight": "INTEGER",
+        "businessChannelId_Mobile": "STRING",
+        "businessChannelId_PC": "STRING",
+        "regTm": "STRING",
+        "delTm": "STRING",
+        "contentType": "STRING",
+        "adGroupType": "STRING",
+        "sharedBudgetID": "STRING",
+        "usingExpandedSearch": "STRING",
+    }
+
+
+def naver_keyword_master_schema():
+    """네이버 키워드 마스터 BigQuery 테이블 스키마"""
+    return {
+        "customerID": "STRING",
+        "adGroupID": "STRING",
+        "adKeywordID": "STRING",
+        "adKeyword": "STRING",
+        "adKeywordBidAmount": "INTEGER",
+        "landingURL_PC": "STRING",
+        "landingURL_Mobile": "STRING",
+        "on_off": "STRING",
+        "adKeywordInspectStatus": "STRING",
+        "usingAdGroupBidAmount": "STRING",
+        "regTm": "STRING",
+        "delTm": "STRING",
+        "adKeywordType": "STRING",
+    }
+
+
+def naver_shopping_product_master_schema():
+    """네이버 쇼핑상품 마스터 BigQuery 테이블 스키마"""
+    return {
+        "customerID": "STRING",
+        "adGroupID": "STRING",
+        "adID": "STRING",
+        "adCreativeInspectStatus": "STRING",
+        "on_off": "STRING",
+        "adProductName": "STRING",
+        "adImageUrl": "STRING",
+        "bid": "INTEGER",
+        "usingAdgroupBidAmount": "STRING",
+        "adLinkStatus": "STRING",
+        "regTm": "STRING",
+        "delTm": "STRING",
+        "productID": "STRING",
+        "productIDofMall": "STRING",
+        "productName": "STRING",
+        "productImageUrl": "STRING",
+        "pcLandingUrl": "STRING",
+        "mobileLandingUrl": "STRING",
+        "price": "INTEGER",
+        "deliveryFee": "INTEGER",
+        "naverShoppingCategory1": "STRING",
+        "naverShoppingCategory2": "STRING",
+        "naverShoppingCategory3": "STRING",
+        "naverShoppingCategory4": "STRING",
+        "naverShoppingCategoryID1": "STRING",
+        "naverShoppingCategoryID2": "STRING",
+        "naverShoppingCategoryID3": "STRING",
+        "naverShoppingCategoryID4": "STRING",
+        "categoryNameofMall": "STRING",
+    }
+
+
 def imweb_inner_data_schema():
     """IMWEB INNER_data BigQuery 테이블 스키마"""
     return [

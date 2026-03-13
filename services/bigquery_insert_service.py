@@ -14,6 +14,10 @@ from models.bigquery_schemas import (
     criteo_schema,
     tiktok_schema,
     dmp_schema,
+    naver_campaign_master_schema,
+    naver_adgroup_master_schema,
+    naver_keyword_master_schema,
+    naver_shopping_product_master_schema,
 )
 import logging, re
 
@@ -30,6 +34,10 @@ class BigQueryReportService:
             "NAVER_AD_CONVERSION": naver_search_ad_cov_schema(),
             "NAVER_SHOPPINGKEYWORD_DETAIL" :naver_shopping_ad_schema(),
             "NAVER_SHOPPINGKEYWORD_CONVERSION_DETAIL": naver_shopping_ad_cov_schema(),
+            "NAVER_Campaign_INDEX": naver_campaign_master_schema(),
+            "NAVER_Adgroup_INDEX": naver_adgroup_master_schema(),
+            "NAVER_Keyword_INDEX": naver_keyword_master_schema(),
+            "NAVER_ShoppingProduct_INDEX": naver_shopping_product_master_schema(),
             "NAVER_GFA": naver_gfa_schema(),
             "KAKAO_SEARCH": kakao_search_ad_schema(),
             "KAKAO_MOMENT": kakao_moment_ad_schema(),
@@ -98,7 +106,7 @@ class BigQueryReportService:
             else:
                 schema_name = table_name
 
-            basic_schema = self.config[schema_name]
+            basic_schema = self.config.get(schema_name, {})
 
             # 기존 테이블 스키마 확인
             existing_schema = await self.client.get_table_schema(data_set_name, table_name)
@@ -163,10 +171,18 @@ class BigQueryReportService:
             elif "dmp" in table_name:
                 schema_name = "DMP"
 
+            elif table_name.startswith("NAVER_"):
+                # find the longest match in self.config
+                matches = [k for k in self.config.keys() if table_name.startswith(k)]
+                if matches:
+                    schema_name = max(matches, key=len)
+                else:
+                    schema_name = table_name
+
             else:
                 schema_name = table_name
 
-            basic_schema = self.config[schema_name]
+            basic_schema = self.config.get(schema_name, {})
 
             # 기존 테이블 스키마 확인
             existing_schema = await self.client.get_table_schema(data_set_name, table_name)
